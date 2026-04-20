@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <preference for="Tess\PricingTool\Api\CategoryManagementInterface" type="Tess\PricingTool\Model\CategoryManagement" />
+    <preference for="Tess\PricingTool\Api\FilterManagementInterface" type="Tess\PricingTool\Model\FilterManagement" />
+    <preference for="Tess\PricingTool\Api\ProductManagementInterface" type="Tess\PricingTool\Model\ProductManagement" />
+
+    <preference for="Tess\PricingTool\Api\Data\CategoryInterface" type="Tess\PricingTool\Model\Data\Category" />
+    <preference for="Tess\PricingTool\Api\Data\CategoryListInterface" type="Tess\PricingTool\Model\Data\CategoryList" />
+    <preference for="Tess\PricingTool\Api\Data\OptionInterface" type="Tess\PricingTool\Model\Data\Option" />
+    <preference for="Tess\PricingTool\Api\Data\FilterOptionsInterface" type="Tess\PricingTool\Model\Data\FilterOptions" />
+    <preference for="Tess\PricingTool\Api\Data\PaginationMetaInterface" type="Tess\PricingTool\Model\Data\PaginationMeta" />
+    <preference for="Tess\PricingTool\Api\Data\SaleUnitInterface" type="Tess\PricingTool\Model\Data\SaleUnit" />
+    <preference for="Tess\PricingTool\Api\Data\ProductInterface" type="Tess\PricingTool\Model\Data\Product" />
+    <preference for="Tess\PricingTool\Api\Data\ProductListInterface" type="Tess\PricingTool\Model\Data\ProductList" />
+</config>

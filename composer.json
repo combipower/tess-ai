@@ -1,0 +1,17 @@
+{
+    "name": "tess/module-pricing-tool",
+    "description": "Base Magento 2 REST APIs for the TESS Pricing Tool integration.",
+    "type": "magento2-module",
+    "version": "1.0.0",
+    "license": [
+        "proprietary"
+    ],
+    "autoload": {
+        "files": [
+            "registration.php"
+        ],
+        "psr-4": {
+            "Tess\\PricingTool\\": ""
+        }
+    }
+}
