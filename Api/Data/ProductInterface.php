@@ -5,12 +5,13 @@ interface ProductInterface
 {
     const ID = 'id';
     const ARTICLE_NUMBER = 'article_number';
-    const EAN = 'ean';
+    const BARCODE = 'barcode';
     const MANUFACTURER_NUMBER = 'manufacturer_number';
     const DESCRIPTION = 'description';
     const BRAND_DGE = 'brand_dge';
     const DELIVERY_TIME = 'delivery_time';
     const PRODUCT_TYPE = 'product_type';
+    const PRICE = 'price';
     const CATEGORY_ID = 'category_id';
     const SALE_UNITS = 'sale_units';
 
@@ -25,9 +26,9 @@ interface ProductInterface
     public function getArticleNumber();
 
     /**
-     * @return string|null
+     * @return string
      */
-    public function getEan();
+    public function getBarcode();
 
     /**
      * @return string|null
@@ -55,6 +56,11 @@ interface ProductInterface
     public function getProductType();
 
     /**
+     * @return float[]|null
+     */
+    public function getPrice();
+
+    /**
      * @return string|null
      */
     public function getCategoryId();
@@ -77,10 +83,10 @@ interface ProductInterface
     public function setArticleNumber($articleNumber);
 
     /**
-     * @param string|null $ean
+     * @param string|null $barcode
      * @return \Tess\PricingTool\Api\Data\ProductInterface
      */
-    public function setEan($ean);
+    public function setBarcode($barcode);
 
     /**
      * @param string|null $manufacturerNumber
@@ -111,6 +117,12 @@ interface ProductInterface
      * @return \Tess\PricingTool\Api\Data\ProductInterface
      */
     public function setProductType($productType);
+
+    /**
+     * @param float[] $price
+     * @return \Tess\PricingTool\Api\Data\ProductInterface
+     */
+    public function setPrice(array $price);
 
     /**
      * @param string|null $categoryId

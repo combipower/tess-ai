@@ -6,6 +6,7 @@
                 <resource id="Tess_PricingTool::api" title="TESS Pricing Tool API" sortOrder="10">
                     <resource id="Tess_PricingTool::read" title="Read Pricing Tool Data" sortOrder="10" />
                 </resource>
+                <resource id="Tess_PricingTool::config" title="TESS Pricing Tool Configuration" sortOrder="20" />
             </resource>
         </resources>
     </acl>

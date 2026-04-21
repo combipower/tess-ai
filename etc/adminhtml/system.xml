@@ -1,0 +1,49 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <tab id="tess" translate="label" sortOrder="850">
+            <label>TESS</label>
+        </tab>
+
+        <section id="tess_pricing_tool" translate="label" type="text" sortOrder="850" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>TESS Pricing Tool</label>
+            <tab>tess</tab>
+            <resource>Tess_PricingTool::config</resource>
+
+            <group id="attribute_mapping" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Attribute Mapping</label>
+
+                <field id="supplier_attribute" translate="label comment" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Supplier Attribute Code</label>
+                    <comment>Product attribute code used for supplier filter.</comment>
+                </field>
+
+                <field id="brand_attribute" translate="label comment" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Brand Attribute Code</label>
+                    <comment>Product attribute code mapped to brand_dge and brand filter.</comment>
+                </field>
+
+                <field id="barcode_attribute" translate="label comment" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Barcode Attribute Code</label>
+                    <comment>Product attribute code mapped to API field barcode and ean query filter.</comment>
+                </field>
+
+                <field id="manufacturer_number_attribute" translate="label comment" type="text" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Manufacturer Number Attribute Code</label>
+                    <comment>Product attribute code mapped to manufacturer_number.</comment>
+                </field>
+
+                <field id="delivery_time_attribute" translate="label comment" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Delivery Time Attribute Code</label>
+                    <comment>Product attribute code mapped to delivery_time.</comment>
+                </field>
+
+                <field id="unit_attribute" translate="label comment" type="text" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Unit Attribute Code</label>
+                    <comment>Product attribute code used to render sale unit label.</comment>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

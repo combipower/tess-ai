@@ -76,6 +76,12 @@ class ProductManagement implements ProductManagementInterface
         $page = max(1, (int) $page);
         $perPage = min(max(1, (int) $per_page), 200);
         $store = $this->storeManager->getStore();
+        $barcodeAttributeCode = $this->attributeProvider->getBarcodeAttributeCode();
+        $manufacturerNumberAttributeCode = $this->attributeProvider->getManufacturerNumberAttributeCode();
+        $brandAttributeCode = $this->attributeProvider->getBrandAttributeCode();
+        $deliveryTimeAttributeCode = $this->attributeProvider->getDeliveryTimeAttributeCode();
+        $unitAttributeCode = $this->attributeProvider->getUnitAttributeCode();
+        $supplierAttributeCode = $this->attributeProvider->getSupplierAttributeCode();
 
         $collection = $this->productCollectionFactory->create();
         $collection->setStoreId($store->getId());
@@ -91,13 +97,11 @@ class ProductManagement implements ProductManagementInterface
         ]);
         $collection->addAttributeToSelect(
             $this->attributeProvider->getExistingProductAttributes([
-                AttributeProvider::EAN_ATTRIBUTE,
-                AttributeProvider::MANUFACTURER_NUMBER_ATTRIBUTE,
-                AttributeProvider::BRAND_ATTRIBUTE,
-                AttributeProvider::DELIVERY_TIME_ATTRIBUTE,
-                AttributeProvider::EXTRA_AMOUNT_ATTRIBUTE,
-                AttributeProvider::SHIPPING_COST_ATTRIBUTE,
-                AttributeProvider::UNIT_ATTRIBUTE,
+                $barcodeAttributeCode,
+                $manufacturerNumberAttributeCode,
+                $brandAttributeCode,
+                $deliveryTimeAttributeCode,
+                $unitAttributeCode,
             ])
         );
         $collection->joinField(
@@ -125,16 +129,16 @@ class ProductManagement implements ProductManagementInterface
             $collection->addAttributeToFilter('sku', ['like' => '%' . $article_number . '%']);
         }
 
-        if ($ean && $this->attributeProvider->hasProductAttribute(AttributeProvider::EAN_ATTRIBUTE)) {
-            $collection->addAttributeToFilter(AttributeProvider::EAN_ATTRIBUTE, ['like' => '%' . $ean . '%']);
+        if ($ean && $this->attributeProvider->hasProductAttribute($barcodeAttributeCode)) {
+            $collection->addAttributeToFilter($barcodeAttributeCode, ['like' => '%' . $ean . '%']);
         }
 
-        if ($supplier_id && $this->attributeProvider->hasProductAttribute(AttributeProvider::SUPPLIER_ATTRIBUTE)) {
-            $collection->addAttributeToFilter(AttributeProvider::SUPPLIER_ATTRIBUTE, $supplier_id);
+        if ($supplier_id && $this->attributeProvider->hasProductAttribute($supplierAttributeCode)) {
+            $collection->addAttributeToFilter($supplierAttributeCode, $supplier_id);
         }
 
-        if ($brand_id && $this->attributeProvider->hasProductAttribute(AttributeProvider::BRAND_ATTRIBUTE)) {
-            $collection->addAttributeToFilter(AttributeProvider::BRAND_ATTRIBUTE, $brand_id);
+        if ($brand_id && $this->attributeProvider->hasProductAttribute($brandAttributeCode)) {
+            $collection->addAttributeToFilter($brandAttributeCode, $brand_id);
         }
 
         $normalizedStock = strtolower((string) $stock);

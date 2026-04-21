@@ -9,6 +9,8 @@ use Tess\PricingTool\Model\Data\SaleUnitFactory;
 
 class ProductMapper
 {
+    private const CONFIGURABLE_PRODUCT_TYPE = 'configurable';
+
     /**
      * @var ProductFactory
      */
@@ -51,62 +53,69 @@ class ProductMapper
         $stockQty = $this->resolveStockQty($catalogProduct);
         $categoryIds = $catalogProduct->getCategoryIds();
         $categoryId = $forcedCategoryId ?: (!empty($categoryIds) ? (string) reset($categoryIds) : null);
-        $unitLabel = $this->attributeProvider->getProductAttributeValue($catalogProduct, AttributeProvider::UNIT_ATTRIBUTE);
+        $barcodeAttributeCode = $this->attributeProvider->getBarcodeAttributeCode();
+        $manufacturerNumberAttributeCode = $this->attributeProvider->getManufacturerNumberAttributeCode();
+        $brandAttributeCode = $this->attributeProvider->getBrandAttributeCode();
+        $deliveryTimeAttributeCode = $this->attributeProvider->getDeliveryTimeAttributeCode();
+        $unitAttributeCode = $this->attributeProvider->getUnitAttributeCode();
+        $unitLabel = $this->attributeProvider->getProductAttributeValue($catalogProduct, $unitAttributeCode);
         $currencyCode = $this->resolveCurrencyCode($catalogProduct);
         $tierPriceRows = $this->resolveTierPriceRows($catalogProduct);
+        $priceValues = $this->resolvePriceValues($catalogProduct);
 
-        $saleUnits = [];
-        foreach ($tierPriceRows as $tierPriceRow) {
-            $unitAmount = $tierPriceRow['qty'];
-            $unitId = $this->formatUnitAmount($unitAmount);
-            $unitPriceExclVat = $tierPriceRow['price'];
-            $saleUnits[] = $this->saleUnitFactory->create()
-                ->setId($unitId)
-                ->setSaleId($unitId)
-                ->setLabel($this->resolveSaleUnitLabel($unitLabel, $unitAmount))
-                ->setValue($unitPriceExclVat)
-                ->setCurrency($currencyCode)
-                ->setPurchasePriceExclVat($this->resolveScaledValue($catalogProduct->getCost(), $unitAmount))
-                ->setShippingCost(
-                    $this->resolveScaledValue(
-                        $this->attributeProvider->getProductAttributeValue(
-                            $catalogProduct,
-                            AttributeProvider::SHIPPING_COST_ATTRIBUTE
-                        ),
-                        $unitAmount
-                    )
-                )
-                ->setAvailableStock($stockQty);
+        $saleUnits = $catalogProduct->getTypeId() === self::CONFIGURABLE_PRODUCT_TYPE
+            ? $this->resolveConfigurableSaleUnits(
+                $catalogProduct,
+                $currencyCode,
+                $unitAttributeCode
+            )
+            : [];
+
+        if (empty($saleUnits)) {
+            foreach ($tierPriceRows as $tierPriceRow) {
+                $unitAmount = $tierPriceRow['qty'];
+                $unitId = $this->formatUnitAmount($unitAmount);
+                $unitPriceExclVat = $tierPriceRow['price'];
+                $saleUnits[] = $this->saleUnitFactory->create()
+                    ->setId($unitId)
+                    ->setSaleId($unitId)
+                    ->setLabel($this->resolveSaleUnitLabel($unitLabel, $unitAmount))
+                    ->setValue($unitPriceExclVat)
+                    ->setCurrency($currencyCode)
+                    ->setPurchasePriceExclVat($this->resolveScaledValue($catalogProduct->getCost(), $unitAmount))
+                    ->setAvailableStock($stockQty);
+            }
         }
+
+        $barcodeValue = $this->normalizeString(
+            $this->attributeProvider->getProductAttributeValue($catalogProduct, $barcodeAttributeCode)
+        );
 
         return $this->productFactory->create()
             ->setId((string) $catalogProduct->getSku())
             ->setArticleNumber((string) $catalogProduct->getSku())
-            ->setEan(
-                $this->normalizeString(
-                    $this->attributeProvider->getProductAttributeValue($catalogProduct, AttributeProvider::EAN_ATTRIBUTE)
-                )
-            )
+            ->setBarcode($barcodeValue)
             ->setManufacturerNumber(
                 $this->normalizeString(
                     $this->attributeProvider->getProductAttributeValue(
                         $catalogProduct,
-                        AttributeProvider::MANUFACTURER_NUMBER_ATTRIBUTE
+                        $manufacturerNumberAttributeCode
                     )
                 )
             )
             ->setDescription($this->resolveDescription($catalogProduct))
             ->setBrandDge(
                 $this->normalizeString(
-                    $this->attributeProvider->getProductAttributeValue($catalogProduct, AttributeProvider::BRAND_ATTRIBUTE)
+                    $this->attributeProvider->getProductAttributeValue($catalogProduct, $brandAttributeCode)
                 )
             )
             ->setDeliveryTime(
                 $this->normalizeString(
-                    $this->attributeProvider->getProductAttributeValue($catalogProduct, AttributeProvider::DELIVERY_TIME_ATTRIBUTE)
+                    $this->attributeProvider->getProductAttributeValue($catalogProduct, $deliveryTimeAttributeCode)
                 )
             )
             ->setProductType($this->normalizeString($catalogProduct->getTypeId()))
+            ->setPrice($priceValues)
             ->setCategoryId($categoryId)
             ->setSaleUnits($saleUnits);
     }
@@ -205,6 +214,174 @@ class ProductMapper
     }
 
     /**
+     * Build product-level price list.
+     *
+     * Simple products expose one base price.
+     * Configurable products expose distinct child prices.
+     *
+     * @param Product $catalogProduct
+     * @return float[]
+     */
+    private function resolvePriceValues(Product $catalogProduct)
+    {
+        if ($catalogProduct->getTypeId() === self::CONFIGURABLE_PRODUCT_TYPE) {
+            $configurablePrices = $this->resolveConfigurableChildPrices($catalogProduct);
+            if (!empty($configurablePrices)) {
+                return $configurablePrices;
+            }
+        }
+
+        $basePrice = $this->normalizeDecimal($catalogProduct->getPrice());
+        if ($basePrice === null) {
+            return [];
+        }
+
+        return [$basePrice];
+    }
+
+    /**
+     * @param Product $catalogProduct
+     * @return float[]
+     */
+    private function resolveConfigurableChildPrices(Product $catalogProduct)
+    {
+        $prices = [];
+        $children = $this->getConfigurableChildren($catalogProduct);
+        if (empty($children)) {
+            return [];
+        }
+
+        foreach ($children as $childProduct) {
+            $price = $this->normalizeDecimal($childProduct->getPrice());
+            if ($price === null) {
+                continue;
+            }
+
+            $prices[sprintf('%.4F', $price)] = $price;
+        }
+
+        ksort($prices, SORT_NATURAL);
+        return array_values($prices);
+    }
+
+    /**
+     * For configurable products, return sale_units from child variants.
+     *
+     * @param Product $catalogProduct
+     * @param string|null $currencyCode
+     * @param string|null $unitAttributeCode
+     * @return \Tess\PricingTool\Api\Data\SaleUnitInterface[]
+     */
+    private function resolveConfigurableSaleUnits(
+        Product $catalogProduct,
+        $currencyCode,
+        $unitAttributeCode
+    )
+    {
+        $saleUnits = [];
+        $children = $this->getConfigurableChildren($catalogProduct);
+        if (empty($children)) {
+            return $saleUnits;
+        }
+
+        foreach ($children as $childProduct) {
+            $childSku = (string) $childProduct->getSku();
+            if ($childSku === '') {
+                continue;
+            }
+
+            $saleUnits[] = $this->saleUnitFactory->create()
+                ->setId($childSku)
+                ->setSaleId($childSku)
+                ->setLabel($this->resolveConfigurableSaleUnitLabel($childProduct, $unitAttributeCode, $childSku))
+                ->setValue($this->normalizeDecimal($childProduct->getPrice()))
+                ->setCurrency($currencyCode)
+                ->setPurchasePriceExclVat($this->normalizeDecimal($childProduct->getCost()))
+                ->setAvailableStock($this->resolveStockQty($childProduct));
+        }
+
+        return $saleUnits;
+    }
+
+    /**
+     * Resolve configurable child label.
+     *
+     * Priority:
+     * 1) Configured unit attribute on child product
+     * 2) Suffix from child name after " - "
+     * 3) Full child name
+     * 4) Child sku fallback
+     *
+     * @param Product $childProduct
+     * @param string|null $unitAttributeCode
+     * @param string $fallback
+     * @return string
+     */
+    private function resolveConfigurableSaleUnitLabel(Product $childProduct, $unitAttributeCode, $fallback)
+    {
+        $unitLabel = $this->normalizeString(
+            $this->attributeProvider->getProductAttributeValue($childProduct, $unitAttributeCode)
+        );
+        if ($unitLabel !== null) {
+            return $unitLabel;
+        }
+
+        $childName = $this->normalizeString($childProduct->getName());
+        if ($childName === null) {
+            return $fallback;
+        }
+
+        $separator = ' - ';
+        $separatorPosition = strrpos($childName, $separator);
+        if ($separatorPosition !== false) {
+            $suffix = trim(substr($childName, $separatorPosition + strlen($separator)));
+            if ($suffix !== '') {
+                return $suffix;
+            }
+        }
+
+        return strip_tags($childName);
+    }
+
+    /**
+     * @param Product $catalogProduct
+     * @return Product[]
+     */
+    private function getConfigurableChildren(Product $catalogProduct)
+    {
+        try {
+            $typeInstance = $catalogProduct->getTypeInstance();
+            if (!is_object($typeInstance) || !method_exists($typeInstance, 'getUsedProducts')) {
+                return [];
+            }
+
+            $children = $typeInstance->getUsedProducts($catalogProduct);
+            if (!is_array($children)) {
+                return [];
+            }
+        } catch (\Throwable $exception) {
+            return [];
+        }
+
+        $result = [];
+        foreach ($children as $childProduct) {
+            if (!$childProduct instanceof Product) {
+                continue;
+            }
+
+            $childSku = trim((string) $childProduct->getSku());
+            if ($childSku === '') {
+                continue;
+            }
+
+            $result[$childSku] = $childProduct;
+        }
+
+        ksort($result, SORT_NATURAL);
+        return array_values($result);
+    }
+
+    /**
      * @param float $amount
      * @return string
      */
@@ -257,21 +434,16 @@ class ProductMapper
     }
 
     /**
-     * Prefer the actual product description fields over the product name.
+     * API field "description" is mapped to product name.
      *
      * @param Product $catalogProduct
      * @return string|null
      */
     private function resolveDescription(Product $catalogProduct)
     {
-        $description = $this->normalizeString($catalogProduct->getData('description'));
-        if ($description !== null) {
-            return strip_tags($description);
-        }
-
-        $shortDescription = $this->normalizeString($catalogProduct->getData('short_description'));
-        if ($shortDescription !== null) {
-            return strip_tags($shortDescription);
+        $name = $this->normalizeString($catalogProduct->getName());
+        if ($name !== null) {
+            return strip_tags($name);
         }
 
         return null;

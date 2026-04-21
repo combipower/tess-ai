@@ -16,9 +16,9 @@ class Product extends AbstractSimpleObject implements ProductInterface
         return $this->_get(self::ARTICLE_NUMBER);
     }
 
-    public function getEan()
+    public function getBarcode()
     {
-        return $this->_get(self::EAN);
+        return $this->_get(self::BARCODE);
     }
 
     public function getManufacturerNumber()
@@ -46,6 +46,11 @@ class Product extends AbstractSimpleObject implements ProductInterface
         return $this->_get(self::PRODUCT_TYPE);
     }
 
+    public function getPrice()
+    {
+        return $this->_get(self::PRICE);
+    }
+
     public function getCategoryId()
     {
         return $this->_get(self::CATEGORY_ID);
@@ -66,9 +71,9 @@ class Product extends AbstractSimpleObject implements ProductInterface
         return $this->setData(self::ARTICLE_NUMBER, $articleNumber);
     }
 
-    public function setEan($ean)
+    public function setBarcode($barcode)
     {
-        return $this->setData(self::EAN, $ean);
+        return $this->setData(self::BARCODE, $barcode);
     }
 
     public function setManufacturerNumber($manufacturerNumber)
@@ -94,6 +99,11 @@ class Product extends AbstractSimpleObject implements ProductInterface
     public function setProductType($productType)
     {
         return $this->setData(self::PRODUCT_TYPE, $productType);
+    }
+
+    public function setPrice(array $price)
+    {
+        return $this->setData(self::PRICE, $price);
     }
 
     public function setCategoryId($categoryId)

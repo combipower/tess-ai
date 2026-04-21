@@ -34,8 +34,12 @@ class FilterManagement implements FilterManagementInterface
 
     public function getOptions()
     {
-        $suppliers = $this->buildOptions($this->attributeProvider->getAttributeOptions(AttributeProvider::SUPPLIER_ATTRIBUTE));
-        $brands = $this->buildOptions($this->attributeProvider->getAttributeOptions(AttributeProvider::BRAND_ATTRIBUTE));
+        $suppliers = $this->buildOptions(
+            $this->attributeProvider->getAttributeOptions($this->attributeProvider->getSupplierAttributeCode())
+        );
+        $brands = $this->buildOptions(
+            $this->attributeProvider->getAttributeOptions($this->attributeProvider->getBrandAttributeCode())
+        );
         $articleNumbers = $this->buildOptions($this->attributeProvider->getSkuOptions());
 
         return $this->filterOptionsFactory->create()

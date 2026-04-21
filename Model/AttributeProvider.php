@@ -4,18 +4,10 @@ namespace Tess\PricingTool\Model;
 use Magento\Catalog\Model\Product as CatalogProduct;
 use Magento\Eav\Model\Config as EavConfig;
 use Magento\Framework\App\ResourceConnection;
+use Tess\PricingTool\Model\Config\AttributeMapping;
 
 class AttributeProvider
 {
-    public const SUPPLIER_ATTRIBUTE = 'supplier_id';
-    public const BRAND_ATTRIBUTE = 'manufacture_brand';
-    public const EAN_ATTRIBUTE = 'ean_code';
-    public const MANUFACTURER_NUMBER_ATTRIBUTE = 'supplier_product_id';
-    public const DELIVERY_TIME_ATTRIBUTE = 'delivery_time';
-    public const EXTRA_AMOUNT_ATTRIBUTE = 'amasty_unit_amount';
-    public const SHIPPING_COST_ATTRIBUTE = null;
-    public const UNIT_ATTRIBUTE = 'sale_unit_code';
-
     /**
      * @var EavConfig
      */
@@ -26,12 +18,75 @@ class AttributeProvider
      */
     private $resourceConnection;
 
+    /**
+     * @var AttributeMapping
+     */
+    private $attributeMapping;
+
     public function __construct(
         EavConfig $eavConfig,
-        ResourceConnection $resourceConnection
+        ResourceConnection $resourceConnection,
+        AttributeMapping $attributeMapping
     ) {
         $this->eavConfig = $eavConfig;
         $this->resourceConnection = $resourceConnection;
+        $this->attributeMapping = $attributeMapping;
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getSupplierAttributeCode()
+    {
+        return $this->attributeMapping->getSupplierAttributeCode();
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getBrandAttributeCode()
+    {
+        return $this->attributeMapping->getBrandAttributeCode();
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getBarcodeAttributeCode()
+    {
+        return $this->attributeMapping->getBarcodeAttributeCode();
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getManufacturerNumberAttributeCode()
+    {
+        return $this->attributeMapping->getManufacturerNumberAttributeCode();
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getDeliveryTimeAttributeCode()
+    {
+        return $this->attributeMapping->getDeliveryTimeAttributeCode();
+    }
+
+    /**
+     * @return string|null
+     */
+    public function getUnitAttributeCode()
+    {
+        return $this->attributeMapping->getUnitAttributeCode();
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getMappedAttributeCodes()
+    {
+        return $this->attributeMapping->getMappedAttributeCodes();
     }
 
     /**

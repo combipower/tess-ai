@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
+    <default>
+        <tess_pricing_tool>
+            <attribute_mapping>
+                <supplier_attribute>supplier_id</supplier_attribute>
+                <brand_attribute>manufacture_brand</brand_attribute>
+                <barcode_attribute>barcode</barcode_attribute>
+                <manufacturer_number_attribute>supplier_product_id</manufacturer_number_attribute>
+                <delivery_time_attribute>delivery_time</delivery_time_attribute>
+                <unit_attribute>sale_unit</unit_attribute>
+            </attribute_mapping>
+        </tess_pricing_tool>
+    </default>
+</config>

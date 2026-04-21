@@ -1,5 +1,5 @@
 {
-    "name": "tess/module-pricing-tool",
+    "name": "tess/pricing-tool",
     "description": "Base Magento 2 REST APIs for the TESS Pricing Tool integration.",
     "type": "magento2-module",
     "version": "1.0.0",
