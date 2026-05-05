@@ -4,7 +4,13 @@
         <sequence>
             <module name="Magento_Catalog" />
             <module name="Magento_CatalogInventory" />
+            <module name="Magento_Directory" />
+            <module name="Magento_Quote" />
+            <module name="Magento_Shipping" />
+            <module name="Magento_Tax" />
             <module name="Magento_Webapi" />
+            <module name="GbiVarpo_DeliveryTime" />
+            <module name="GbiVarpo_Inventory" />
         </sequence>
     </module>
 </config>

@@ -68,25 +68,9 @@ class AttributeProvider
     /**
      * @return string|null
      */
-    public function getDeliveryTimeAttributeCode()
-    {
-        return $this->attributeMapping->getDeliveryTimeAttributeCode();
-    }
-
-    /**
-     * @return string|null
-     */
     public function getUnitAttributeCode()
     {
         return $this->attributeMapping->getUnitAttributeCode();
-    }
-
-    /**
-     * @return string[]
-     */
-    public function getMappedAttributeCodes()
-    {
-        return $this->attributeMapping->getMappedAttributeCodes();
     }
 
     /**

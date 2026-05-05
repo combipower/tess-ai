@@ -8,7 +8,8 @@ interface SaleUnitInterface
     const LABEL = 'label';
     const VALUE = 'value';
     const CURRENCY = 'currency';
-    const PURCHASE_PRICE_EXCL_VAT = 'purchase_price_excl_vat';
+    const CURRENT_SALES_PRICE_INCL_VAT = 'current_sales_price_incl_vat';
+    const PURCHASE_PRICE = 'purchase_price';
     const SHIPPING_COST = 'shipping_cost';
     const AVAILABLE_STOCK = 'available_stock';
 
@@ -40,7 +41,12 @@ interface SaleUnitInterface
     /**
      * @return float|null
      */
-    public function getPurchasePriceExclVat();
+    public function getCurrentSalesPriceInclVat();
+
+    /**
+     * @return float
+     */
+    public function getPurchasePrice();
 
     /**
      * @return float|null
@@ -86,7 +92,13 @@ interface SaleUnitInterface
      * @param float|null $price
      * @return \Tess\PricingTool\Api\Data\SaleUnitInterface
      */
-    public function setPurchasePriceExclVat($price);
+    public function setCurrentSalesPriceInclVat($price);
+
+    /**
+     * @param float|null $price
+     * @return \Tess\PricingTool\Api\Data\SaleUnitInterface
+     */
+    public function setPurchasePrice($price);
 
     /**
      * @param float|null $cost

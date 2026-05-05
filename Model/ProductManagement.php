@@ -79,7 +79,6 @@ class ProductManagement implements ProductManagementInterface
         $barcodeAttributeCode = $this->attributeProvider->getBarcodeAttributeCode();
         $manufacturerNumberAttributeCode = $this->attributeProvider->getManufacturerNumberAttributeCode();
         $brandAttributeCode = $this->attributeProvider->getBrandAttributeCode();
-        $deliveryTimeAttributeCode = $this->attributeProvider->getDeliveryTimeAttributeCode();
         $unitAttributeCode = $this->attributeProvider->getUnitAttributeCode();
         $supplierAttributeCode = $this->attributeProvider->getSupplierAttributeCode();
 
@@ -88,8 +87,6 @@ class ProductManagement implements ProductManagementInterface
         $collection->addStoreFilter($store);
         $collection->addAttributeToSelect([
             'name',
-            'description',
-            'short_description',
             'price',
             'cost',
             'tax_class_id',
@@ -100,7 +97,6 @@ class ProductManagement implements ProductManagementInterface
                 $barcodeAttributeCode,
                 $manufacturerNumberAttributeCode,
                 $brandAttributeCode,
-                $deliveryTimeAttributeCode,
                 $unitAttributeCode,
             ])
         );

@@ -11,7 +11,6 @@ class AttributeMapping
     public const XML_PATH_BRAND_ATTRIBUTE = 'tess_pricing_tool/attribute_mapping/brand_attribute';
     public const XML_PATH_BARCODE_ATTRIBUTE = 'tess_pricing_tool/attribute_mapping/barcode_attribute';
     public const XML_PATH_MANUFACTURER_NUMBER_ATTRIBUTE = 'tess_pricing_tool/attribute_mapping/manufacturer_number_attribute';
-    public const XML_PATH_DELIVERY_TIME_ATTRIBUTE = 'tess_pricing_tool/attribute_mapping/delivery_time_attribute';
     public const XML_PATH_UNIT_ATTRIBUTE = 'tess_pricing_tool/attribute_mapping/unit_attribute';
 
     /**
@@ -67,36 +66,9 @@ class AttributeMapping
     /**
      * @return string|null
      */
-    public function getDeliveryTimeAttributeCode()
-    {
-        return $this->getConfiguredAttributeCode(self::XML_PATH_DELIVERY_TIME_ATTRIBUTE);
-    }
-
-    /**
-     * @return string|null
-     */
     public function getUnitAttributeCode()
     {
         return $this->getConfiguredAttributeCode(self::XML_PATH_UNIT_ATTRIBUTE);
-    }
-
-    /**
-     * @return string[]
-     */
-    public function getMappedAttributeCodes()
-    {
-        return array_values(
-            array_filter(
-                [
-                    $this->getSupplierAttributeCode(),
-                    $this->getBrandAttributeCode(),
-                    $this->getBarcodeAttributeCode(),
-                    $this->getManufacturerNumberAttributeCode(),
-                    $this->getDeliveryTimeAttributeCode(),
-                    $this->getUnitAttributeCode(),
-                ]
-            )
-        );
     }
 
     /**

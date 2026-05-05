@@ -8,9 +8,14 @@
                 <brand_attribute>manufacture_brand</brand_attribute>
                 <barcode_attribute>barcode</barcode_attribute>
                 <manufacturer_number_attribute>supplier_product_id</manufacturer_number_attribute>
-                <delivery_time_attribute>delivery_time</delivery_time_attribute>
                 <unit_attribute>sale_unit</unit_attribute>
             </attribute_mapping>
+            <shipping_estimate>
+                <country_id>NL</country_id>
+                <postcode>1011AC</postcode>
+                <city>Amsterdam</city>
+                <street>Dam 1</street>
+            </shipping_estimate>
         </tess_pricing_tool>
     </default>
 </config>

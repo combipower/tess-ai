@@ -1,8 +1,10 @@
 <?php
 namespace Tess\PricingTool\Model;
 
+use Magento\Catalog\Helper\Data as CatalogHelper;
 use Magento\Catalog\Model\Product;
 use Magento\CatalogInventory\Api\StockRegistryInterface;
+use Magento\Framework\App\ObjectManager;
 use Tess\PricingTool\Api\Data\ProductInterface;
 use Tess\PricingTool\Model\Data\ProductFactory;
 use Tess\PricingTool\Model\Data\SaleUnitFactory;
@@ -31,16 +33,37 @@ class ProductMapper
      */
     private $attributeProvider;
 
+    /**
+     * @var CatalogHelper
+     */
+    private $catalogHelper;
+
+    /**
+     * @var ShippingCostResolver
+     */
+    private $shippingCostResolver;
+
+    /**
+     * @var DeliveryTimeResolver
+     */
+    private $deliveryTimeResolver;
+
     public function __construct(
         ProductFactory $productFactory,
         SaleUnitFactory $saleUnitFactory,
         StockRegistryInterface $stockRegistry,
-        AttributeProvider $attributeProvider
+        AttributeProvider $attributeProvider,
+        CatalogHelper $catalogHelper,
+        ShippingCostResolver $shippingCostResolver = null,
+        DeliveryTimeResolver $deliveryTimeResolver = null
     ) {
         $this->productFactory = $productFactory;
         $this->saleUnitFactory = $saleUnitFactory;
         $this->stockRegistry = $stockRegistry;
         $this->attributeProvider = $attributeProvider;
+        $this->catalogHelper = $catalogHelper;
+        $this->shippingCostResolver = $shippingCostResolver;
+        $this->deliveryTimeResolver = $deliveryTimeResolver;
     }
 
     /**
@@ -56,7 +79,6 @@ class ProductMapper
         $barcodeAttributeCode = $this->attributeProvider->getBarcodeAttributeCode();
         $manufacturerNumberAttributeCode = $this->attributeProvider->getManufacturerNumberAttributeCode();
         $brandAttributeCode = $this->attributeProvider->getBrandAttributeCode();
-        $deliveryTimeAttributeCode = $this->attributeProvider->getDeliveryTimeAttributeCode();
         $unitAttributeCode = $this->attributeProvider->getUnitAttributeCode();
         $unitLabel = $this->attributeProvider->getProductAttributeValue($catalogProduct, $unitAttributeCode);
         $currencyCode = $this->resolveCurrencyCode($catalogProduct);
@@ -76,13 +98,18 @@ class ProductMapper
                 $unitAmount = $tierPriceRow['qty'];
                 $unitId = $this->formatUnitAmount($unitAmount);
                 $unitPriceExclVat = $tierPriceRow['price'];
+                $purchasePrice = $this->normalizeDecimal($catalogProduct->getCost());
                 $saleUnits[] = $this->saleUnitFactory->create()
                     ->setId($unitId)
                     ->setSaleId($unitId)
                     ->setLabel($this->resolveSaleUnitLabel($unitLabel, $unitAmount))
                     ->setValue($unitPriceExclVat)
                     ->setCurrency($currencyCode)
-                    ->setPurchasePriceExclVat($this->resolveScaledValue($catalogProduct->getCost(), $unitAmount))
+                    ->setCurrentSalesPriceInclVat(
+                        $this->resolveProductPriceInclVat($catalogProduct, $unitPriceExclVat)
+                    )
+                    ->setPurchasePrice($purchasePrice)
+                    ->setShippingCost($this->getShippingCostResolver()->resolve($catalogProduct, $unitAmount))
                     ->setAvailableStock($stockQty);
             }
         }
@@ -92,7 +119,7 @@ class ProductMapper
         );
 
         return $this->productFactory->create()
-            ->setId((string) $catalogProduct->getSku())
+            ->setId((string) $catalogProduct->getId())
             ->setArticleNumber((string) $catalogProduct->getSku())
             ->setBarcode($barcodeValue)
             ->setManufacturerNumber(
@@ -110,9 +137,7 @@ class ProductMapper
                 )
             )
             ->setDeliveryTime(
-                $this->normalizeString(
-                    $this->attributeProvider->getProductAttributeValue($catalogProduct, $deliveryTimeAttributeCode)
-                )
+                $this->resolveDeliveryTime($catalogProduct)
             )
             ->setProductType($this->normalizeString($catalogProduct->getTypeId()))
             ->setPrice($priceValues)
@@ -140,21 +165,6 @@ class ProductMapper
         }
 
         return null;
-    }
-
-    /**
-     * @param mixed $baseValue
-     * @param float $unitAmount
-     * @return float|null
-     */
-    private function resolveScaledValue($baseValue, $unitAmount)
-    {
-        $normalizedBaseValue = $this->normalizeDecimal($baseValue);
-        if ($normalizedBaseValue === null) {
-            return null;
-        }
-
-        return $this->normalizeDecimal($normalizedBaseValue * $unitAmount);
     }
 
     /**
@@ -265,6 +275,46 @@ class ProductMapper
     }
 
     /**
+     * @param Product $catalogProduct
+     * @param mixed $price
+     * @return float|null
+     */
+    private function resolveProductPriceInclVat(Product $catalogProduct, $price = null)
+    {
+        $price = $this->normalizeDecimal($price);
+        if ($price === null) {
+            $price = $this->normalizeDecimal($catalogProduct->getFinalPrice());
+            if ($price === null) {
+                $price = $this->normalizeDecimal($catalogProduct->getPrice());
+            }
+        }
+
+        if ($price === null) {
+            return null;
+        }
+
+        try {
+            $store = $catalogProduct->getStore();
+            $storeId = $store ? $store->getId() : null;
+            return $this->normalizeDecimal(
+                $this->catalogHelper->getTaxPrice(
+                    $catalogProduct,
+                    $price,
+                    true,
+                    null,
+                    null,
+                    null,
+                    $storeId,
+                    null,
+                    true
+                )
+            );
+        } catch (\Throwable $exception) {
+            return null;
+        }
+    }
+
+    /**
      * For configurable products, return sale_units from child variants.
      *
      * @param Product $catalogProduct
@@ -290,17 +340,58 @@ class ProductMapper
                 continue;
             }
 
+            $purchasePrice = $this->normalizeDecimal($childProduct->getCost());
+            $unitPriceExclVat = $this->normalizeDecimal($childProduct->getPrice());
             $saleUnits[] = $this->saleUnitFactory->create()
                 ->setId($childSku)
                 ->setSaleId($childSku)
                 ->setLabel($this->resolveConfigurableSaleUnitLabel($childProduct, $unitAttributeCode, $childSku))
-                ->setValue($this->normalizeDecimal($childProduct->getPrice()))
+                ->setValue($unitPriceExclVat)
                 ->setCurrency($currencyCode)
-                ->setPurchasePriceExclVat($this->normalizeDecimal($childProduct->getCost()))
+                ->setCurrentSalesPriceInclVat($this->resolveProductPriceInclVat($childProduct, $unitPriceExclVat))
+                ->setPurchasePrice($purchasePrice)
+                ->setShippingCost($this->getShippingCostResolver()->resolve($childProduct))
                 ->setAvailableStock($this->resolveStockQty($childProduct));
         }
 
         return $saleUnits;
+    }
+
+    /**
+     * @return ShippingCostResolver
+     */
+    private function getShippingCostResolver()
+    {
+        if ($this->shippingCostResolver === null) {
+            $this->shippingCostResolver = ObjectManager::getInstance()->get(ShippingCostResolver::class);
+        }
+
+        return $this->shippingCostResolver;
+    }
+
+    /**
+     * @param Product $catalogProduct
+     * @return string|null
+     */
+    private function resolveDeliveryTime(Product $catalogProduct)
+    {
+        try {
+            return $this->normalizeString($this->getDeliveryTimeResolver()->resolve($catalogProduct));
+        } catch (\Throwable $exception) {
+            return null;
+        }
+    }
+
+    /**
+     * @return DeliveryTimeResolver
+     */
+    private function getDeliveryTimeResolver()
+    {
+        if ($this->deliveryTimeResolver === null) {
+            $this->deliveryTimeResolver = ObjectManager::getInstance()->get(DeliveryTimeResolver::class);
+        }
+
+        return $this->deliveryTimeResolver;
     }
 
     /**

@@ -29,13 +29,30 @@ Product attribute codes used by the API are configurable in Admin:
 
 The module reads attribute codes from this configuration per store scope instead of hardcoded codes.
 
+## Shipping Cost Configuration
+
+The API field `shipping_cost` is calculated by creating a temporary quote with the product quantity and collecting Magento shipping rates for the configured destination.
+
+Configure the destination in Admin:
+
+- `Stores > Configuration > TESS > TESS Pricing Tool > Shipping Estimate`
+
+Defaults are set to Netherlands:
+
+- Country: `NL`
+- Postcode: `1011AC`
+- City: `Amsterdam`
+- Street: `Dam 1`
+
+If `Shipping Method Code` is empty, the API uses the cheapest available shipping rate. To force one method, enter its Magento rate code, for example `flatrate_flatrate`.
+
 ## Activation
 
 Install module via Composer:
 
 ```bash
-composer config repositories.tess/module-pricing-tool vcs git@github.com:combipower/tess-ai.git
-composer require tess/module-pricing-tool:dev-main
+composer config repositories.tess/pricing-tool vcs git@github.com:combipower/tess-ai.git
+composer require tess/pricing-tool:dev-main
 ```
 
 Then enable the module and register it with Magento:

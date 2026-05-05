@@ -34,14 +34,49 @@
                     <comment>Product attribute code mapped to manufacturer_number.</comment>
                 </field>
 
-                <field id="delivery_time_attribute" translate="label comment" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Delivery Time Attribute Code</label>
-                    <comment>Product attribute code mapped to delivery_time.</comment>
-                </field>
-
-                <field id="unit_attribute" translate="label comment" type="text" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1">
+                <field id="unit_attribute" translate="label comment" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Unit Attribute Code</label>
                     <comment>Product attribute code used to render sale unit label.</comment>
+                </field>
+            </group>
+
+            <group id="shipping_estimate" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Shipping Estimate</label>
+
+                <field id="country_id" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Default Shipping Country</label>
+                    <source_model>Magento\Directory\Model\Config\Source\Country</source_model>
+                    <comment>Country used when calculating shipping_cost for Pricing Tool API products.</comment>
+                </field>
+
+                <field id="region_id" translate="label comment" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Default Shipping Region ID</label>
+                    <comment>Optional Magento region ID for the default shipping address.</comment>
+                </field>
+
+                <field id="region" translate="label comment" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Default Shipping Region</label>
+                    <comment>Optional region text for countries without a Magento region ID.</comment>
+                </field>
+
+                <field id="postcode" translate="label comment" type="text" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Default Shipping Postcode</label>
+                    <comment>Postcode used by shipping rules such as table rates.</comment>
+                </field>
+
+                <field id="city" translate="label comment" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Default Shipping City</label>
+                    <comment>City used by shipping rules when required by carriers.</comment>
+                </field>
+
+                <field id="street" translate="label comment" type="text" sortOrder="60" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Default Shipping Street</label>
+                    <comment>Street used by shipping rules when required by carriers.</comment>
+                </field>
+
+                <field id="shipping_method" translate="label comment" type="text" sortOrder="70" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Shipping Method Code</label>
+                    <comment>Optional carrier_method code, for example flatrate_flatrate. Leave empty to use the cheapest available rate.</comment>
                 </field>
             </group>
         </section>
