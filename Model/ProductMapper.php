@@ -68,14 +68,13 @@ class ProductMapper
 
     /**
      * @param Product $catalogProduct
-     * @param string|null $forcedCategoryId
+     * @param mixed $forcedCategoryId
      * @return ProductInterface
      */
     public function map(Product $catalogProduct, $forcedCategoryId = null)
     {
         $stockQty = $this->resolveStockQty($catalogProduct);
-        $categoryIds = $catalogProduct->getCategoryIds();
-        $categoryId = $forcedCategoryId ?: (!empty($categoryIds) ? (string) reset($categoryIds) : null);
+        $categoryId = $this->resolveCategoryId($catalogProduct, $forcedCategoryId);
         $barcodeAttributeCode = $this->attributeProvider->getBarcodeAttributeCode();
         $manufacturerNumberAttributeCode = $this->attributeProvider->getManufacturerNumberAttributeCode();
         $brandAttributeCode = $this->attributeProvider->getBrandAttributeCode();
@@ -165,6 +164,79 @@ class ProductMapper
         }
 
         return null;
+    }
+
+    /**
+     * @param Product $catalogProduct
+     * @param mixed $forcedCategoryId
+     * @return string|null
+     */
+    private function resolveCategoryId(Product $catalogProduct, $forcedCategoryId = null)
+    {
+        $productCategoryIds = array_map('strval', $catalogProduct->getCategoryIds() ?: []);
+        $forcedCategoryIds = $this->normalizeCategoryIds($forcedCategoryId);
+
+        if (!empty($forcedCategoryIds)) {
+            foreach ($forcedCategoryIds as $categoryId) {
+                if (in_array((string) $categoryId, $productCategoryIds, true)) {
+                    return (string) $categoryId;
+                }
+            }
+
+            return (string) reset($forcedCategoryIds);
+        }
+
+        return !empty($productCategoryIds) ? (string) reset($productCategoryIds) : null;
+    }
+
+    /**
+     * @param mixed $categoryId
+     * @return int[]
+     */
+    private function normalizeCategoryIds($categoryId)
+    {
+        $values = [];
+        $this->collectCategoryIdValues($categoryId, $values);
+
+        $ids = [];
+        foreach ($values as $value) {
+            foreach (explode(',', (string) $value) as $part) {
+                $part = trim($part);
+                if ($part === '') {
+                    continue;
+                }
+
+                $id = (int) $part;
+                if ($id > 0) {
+                    $ids[$id] = $id;
+                }
+            }
+        }
+
+        return array_values($ids);
+    }
+
+    /**
+     * @param mixed $value
+     * @param array $values
+     * @return void
+     */
+    private function collectCategoryIdValues($value, array &$values)
+    {
+        if ($value === null || $value === '') {
+            return;
+        }
+
+        if (is_array($value)) {
+            foreach ($value as $item) {
+                $this->collectCategoryIdValues($item, $values);
+            }
+            return;
+        }
+
+        if (is_scalar($value)) {
+            $values[] = $value;
+        }
     }
 
     /**

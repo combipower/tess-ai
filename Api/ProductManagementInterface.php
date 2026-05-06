@@ -10,7 +10,7 @@ interface ProductManagementInterface
     /**
      * Return the pricing-tool product grid data.
      *
-     * @param string|null $category_id
+     * @param mixed|null $category_id Category ID, comma-separated IDs, or array of IDs.
      * @param string|null $supplier_id
      * @param string|null $brand_id
      * @param string|null $article_number

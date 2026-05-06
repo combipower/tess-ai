@@ -117,8 +117,9 @@ class ProductManagement implements ProductManagementInterface
             'left'
         );
 
-        if ($category_id) {
-            $collection->addCategoriesFilter(['in' => [(int) $category_id]]);
+        $categoryIds = $this->normalizeCategoryIds($category_id);
+        if (!empty($categoryIds)) {
+            $collection->addCategoriesFilter(['in' => $categoryIds]);
         }
 
         if ($article_number) {
@@ -150,7 +151,7 @@ class ProductManagement implements ProductManagementInterface
 
         $items = [];
         foreach ($collection as $catalogProduct) {
-            $items[] = $this->productMapper->map($catalogProduct, $category_id);
+            $items[] = $this->productMapper->map($catalogProduct, $categoryIds);
         }
 
         $meta = $this->paginationMetaFactory->create()
@@ -169,5 +170,55 @@ class ProductManagement implements ProductManagementInterface
         $product = $this->productRepository->get($sku, false, $store->getId(), true);
 
         return $this->productMapper->map($product);
+    }
+
+    /**
+     * @param mixed $categoryId
+     * @return int[]
+     */
+    private function normalizeCategoryIds($categoryId)
+    {
+        $values = [];
+        $this->collectCategoryIdValues($categoryId, $values);
+
+        $ids = [];
+        foreach ($values as $value) {
+            foreach (explode(',', (string) $value) as $part) {
+                $part = trim($part);
+                if ($part === '') {
+                    continue;
+                }
+
+                $id = (int) $part;
+                if ($id > 0) {
+                    $ids[$id] = $id;
+                }
+            }
+        }
+
+        return array_values($ids);
+    }
+
+    /**
+     * @param mixed $value
+     * @param array $values
+     * @return void
+     */
+    private function collectCategoryIdValues($value, array &$values)
+    {
+        if ($value === null || $value === '') {
+            return;
+        }
+
+        if (is_array($value)) {
+            foreach ($value as $item) {
+                $this->collectCategoryIdValues($item, $values);
+            }
+            return;
+        }
+
+        if (is_scalar($value)) {
+            $values[] = $value;
+        }
     }
 }
