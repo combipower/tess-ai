@@ -1,5 +1,5 @@
 <?php
-namespace Tess\PricingTool\Api;
+namespace Combipower\TessAI\Api;
 
 /**
  * Category API for the pricing tool.
@@ -10,7 +10,7 @@ interface CategoryManagementInterface
     /**
      * Return the category tree for the current store.
      *
-     * @return \Tess\PricingTool\Api\Data\CategoryListInterface
+     * @return \Combipower\TessAI\Api\Data\CategoryListInterface
      */
     public function getList();
 }

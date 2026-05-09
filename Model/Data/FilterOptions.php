@@ -1,8 +1,8 @@
 <?php
-namespace Tess\PricingTool\Model\Data;
+namespace Combipower\TessAI\Model\Data;
 
 use Magento\Framework\Api\AbstractSimpleObject;
-use Tess\PricingTool\Api\Data\FilterOptionsInterface;
+use Combipower\TessAI\Api\Data\FilterOptionsInterface;
 
 class FilterOptions extends AbstractSimpleObject implements FilterOptionsInterface
 {

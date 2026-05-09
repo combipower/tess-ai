@@ -1,5 +1,5 @@
 <?php
-namespace Tess\PricingTool\Api;
+namespace Combipower\TessAI\Api;
 
 /**
  * Filter API for the pricing tool.
@@ -10,7 +10,7 @@ interface FilterManagementInterface
     /**
      * Return available filter options.
      *
-     * @return \Tess\PricingTool\Api\Data\FilterOptionsInterface
+     * @return \Combipower\TessAI\Api\Data\FilterOptionsInterface
      */
     public function getOptions();
 }

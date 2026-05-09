@@ -1,18 +1,18 @@
 <?php
-namespace Tess\PricingTool\Api\Data;
+namespace Combipower\TessAI\Api\Data;
 
 interface CategoryListInterface
 {
     const ITEMS = 'items';
 
     /**
-     * @return \Tess\PricingTool\Api\Data\CategoryInterface[]|null
+     * @return \Combipower\TessAI\Api\Data\CategoryInterface[]|null
      */
     public function getItems();
 
     /**
-     * @param \Tess\PricingTool\Api\Data\CategoryInterface[] $items
-     * @return \Tess\PricingTool\Api\Data\CategoryListInterface
+     * @param \Combipower\TessAI\Api\Data\CategoryInterface[] $items
+     * @return \Combipower\TessAI\Api\Data\CategoryListInterface
      */
     public function setItems(array $items);
 }

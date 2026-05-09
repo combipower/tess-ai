@@ -1,30 +1,30 @@
 <?xml version="1.0"?>
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Webapi:etc/webapi.xsd">
-    <route url="/V1/tess/pricing/categories" method="GET">
-        <service class="Tess\PricingTool\Api\CategoryManagementInterface" method="getList" />
+    <route url="/V1/tessAi/categories" method="GET">
+        <service class="Combipower\TessAI\Api\CategoryManagementInterface" method="getList" />
         <resources>
-            <resource ref="Tess_PricingTool::read" />
+            <resource ref="Combipower_TessAI::read" />
         </resources>
     </route>
 
-    <route url="/V1/tess/pricing/filters" method="GET">
-        <service class="Tess\PricingTool\Api\FilterManagementInterface" method="getOptions" />
+    <route url="/V1/tessAi/filters" method="GET">
+        <service class="Combipower\TessAI\Api\FilterManagementInterface" method="getOptions" />
         <resources>
-            <resource ref="Tess_PricingTool::read" />
+            <resource ref="Combipower_TessAI::read" />
         </resources>
     </route>
 
-    <route url="/V1/tess/pricing/products" method="GET">
-        <service class="Tess\PricingTool\Api\ProductManagementInterface" method="getList" />
+    <route url="/V1/tessAi/products" method="GET">
+        <service class="Combipower\TessAI\Api\ProductManagementInterface" method="getList" />
         <resources>
-            <resource ref="Tess_PricingTool::read" />
+            <resource ref="Combipower_TessAI::read" />
         </resources>
     </route>
 
-    <route url="/V1/tess/pricing/products/:sku" method="GET">
-        <service class="Tess\PricingTool\Api\ProductManagementInterface" method="getBySku" />
+    <route url="/V1/tessAi/products/:sku" method="GET">
+        <service class="Combipower\TessAI\Api\ProductManagementInterface" method="getBySku" />
         <resources>
-            <resource ref="Tess_PricingTool::read" />
+            <resource ref="Combipower_TessAI::read" />
         </resources>
     </route>
 </routes>

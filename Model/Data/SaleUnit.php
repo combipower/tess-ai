@@ -1,8 +1,8 @@
 <?php
-namespace Tess\PricingTool\Model\Data;
+namespace Combipower\TessAI\Model\Data;
 
 use Magento\Framework\Api\AbstractSimpleObject;
-use Tess\PricingTool\Api\Data\SaleUnitInterface;
+use Combipower\TessAI\Api\Data\SaleUnitInterface;
 
 class SaleUnit extends AbstractSimpleObject implements SaleUnitInterface
 {
@@ -31,6 +31,11 @@ class SaleUnit extends AbstractSimpleObject implements SaleUnitInterface
         return $this->_get(self::CURRENCY);
     }
 
+    public function getCurrentSalesPriceExclVat()
+    {
+        return $this->_get(self::CURRENT_SALES_PRICE_EXCL_VAT);
+    }
+
     public function getCurrentSalesPriceInclVat()
     {
         return $this->_get(self::CURRENT_SALES_PRICE_INCL_VAT);
@@ -39,6 +44,16 @@ class SaleUnit extends AbstractSimpleObject implements SaleUnitInterface
     public function getPurchasePrice()
     {
         return $this->_get(self::PURCHASE_PRICE);
+    }
+
+    public function getPurchasePriceExclVat()
+    {
+        return $this->_get(self::PURCHASE_PRICE_EXCL_VAT);
+    }
+
+    public function getPurchasePriceInclVat()
+    {
+        return $this->_get(self::PURCHASE_PRICE_INCL_VAT);
     }
 
     public function getShippingCost()
@@ -76,6 +91,11 @@ class SaleUnit extends AbstractSimpleObject implements SaleUnitInterface
         return $this->setData(self::CURRENCY, $currency);
     }
 
+    public function setCurrentSalesPriceExclVat($price)
+    {
+        return $this->setData(self::CURRENT_SALES_PRICE_EXCL_VAT, $price);
+    }
+
     public function setCurrentSalesPriceInclVat($price)
     {
         return $this->setData(self::CURRENT_SALES_PRICE_INCL_VAT, $price);
@@ -84,6 +104,16 @@ class SaleUnit extends AbstractSimpleObject implements SaleUnitInterface
     public function setPurchasePrice($price)
     {
         return $this->setData(self::PURCHASE_PRICE, $price);
+    }
+
+    public function setPurchasePriceExclVat($price)
+    {
+        return $this->setData(self::PURCHASE_PRICE_EXCL_VAT, $price);
+    }
+
+    public function setPurchasePriceInclVat($price)
+    {
+        return $this->setData(self::PURCHASE_PRICE_INCL_VAT, $price);
     }
 
     public function setShippingCost($cost)

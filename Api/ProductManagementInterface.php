@@ -1,5 +1,5 @@
 <?php
-namespace Tess\PricingTool\Api;
+namespace Combipower\TessAI\Api;
 
 /**
  * Product read API for the pricing tool.
@@ -18,7 +18,7 @@ interface ProductManagementInterface
      * @param string|null $stock
      * @param int $page
      * @param int $per_page
-     * @return \Tess\PricingTool\Api\Data\ProductListInterface
+     * @return \Combipower\TessAI\Api\Data\ProductListInterface
      */
     public function getList(
         $category_id = null,
@@ -35,7 +35,7 @@ interface ProductManagementInterface
      * Return one product row by sku.
      *
      * @param string $sku
-     * @return \Tess\PricingTool\Api\Data\ProductInterface
+     * @return \Combipower\TessAI\Api\Data\ProductInterface
      */
     public function getBySku($sku);
 }

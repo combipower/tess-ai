@@ -1,10 +1,10 @@
 <?php
-namespace Tess\PricingTool\Model;
+namespace Combipower\TessAI\Model;
 
 use Magento\Catalog\Model\Product as CatalogProduct;
 use Magento\Eav\Model\Config as EavConfig;
 use Magento\Framework\App\ResourceConnection;
-use Tess\PricingTool\Model\Config\AttributeMapping;
+use Combipower\TessAI\Model\Config\AttributeMapping;
 
 class AttributeProvider
 {

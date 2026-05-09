@@ -1,5 +1,5 @@
 <?php
-namespace Tess\PricingTool\Api\Data;
+namespace Combipower\TessAI\Api\Data;
 
 interface OptionInterface
 {
@@ -18,13 +18,13 @@ interface OptionInterface
 
     /**
      * @param string $id
-     * @return \Tess\PricingTool\Api\Data\OptionInterface
+     * @return \Combipower\TessAI\Api\Data\OptionInterface
      */
     public function setId($id);
 
     /**
      * @param string $name
-     * @return \Tess\PricingTool\Api\Data\OptionInterface
+     * @return \Combipower\TessAI\Api\Data\OptionInterface
      */
     public function setName($name);
 }

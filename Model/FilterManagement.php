@@ -1,9 +1,9 @@
 <?php
-namespace Tess\PricingTool\Model;
+namespace Combipower\TessAI\Model;
 
-use Tess\PricingTool\Api\FilterManagementInterface;
-use Tess\PricingTool\Model\Data\FilterOptionsFactory;
-use Tess\PricingTool\Model\Data\OptionFactory;
+use Combipower\TessAI\Api\FilterManagementInterface;
+use Combipower\TessAI\Model\Data\FilterOptionsFactory;
+use Combipower\TessAI\Model\Data\OptionFactory;
 
 class FilterManagement implements FilterManagementInterface
 {
@@ -50,7 +50,7 @@ class FilterManagement implements FilterManagementInterface
 
     /**
      * @param array[] $options
-     * @return \Tess\PricingTool\Api\Data\OptionInterface[]
+     * @return \Combipower\TessAI\Api\Data\OptionInterface[]
      */
     private function buildOptions(array $options)
     {

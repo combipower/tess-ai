@@ -2,14 +2,14 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
     <system>
-        <tab id="tess" translate="label" sortOrder="850">
-            <label>TESS</label>
+        <tab id="combipower" translate="label" sortOrder="850">
+            <label>Combipower</label>
         </tab>
 
-        <section id="tess_pricing_tool" translate="label" type="text" sortOrder="850" showInDefault="1" showInWebsite="1" showInStore="1">
-            <label>TESS Pricing Tool</label>
-            <tab>tess</tab>
-            <resource>Tess_PricingTool::config</resource>
+        <section id="combipower_tess_ai" translate="label" type="text" sortOrder="850" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>TESS AI</label>
+            <tab>combipower</tab>
+            <resource>Combipower_TessAI::config</resource>
 
             <group id="attribute_mapping" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Attribute Mapping</label>

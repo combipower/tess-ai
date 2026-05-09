@@ -1,17 +1,20 @@
 <?php
-namespace Tess\PricingTool\Api\Data;
+namespace Combipower\TessAI\Api\Data;
 
 interface SaleUnitInterface
 {
-    const ID = 'id';
-    const SALE_ID = 'sale_id';
-    const LABEL = 'label';
-    const VALUE = 'value';
-    const CURRENCY = 'currency';
-    const CURRENT_SALES_PRICE_INCL_VAT = 'current_sales_price_incl_vat';
-    const PURCHASE_PRICE = 'purchase_price';
-    const SHIPPING_COST = 'shipping_cost';
-    const AVAILABLE_STOCK = 'available_stock';
+    public const ID = 'id';
+    public const SALE_ID = 'sale_id';
+    public const LABEL = 'label';
+    public const VALUE = 'value';
+    public const CURRENCY = 'currency';
+    public const CURRENT_SALES_PRICE_EXCL_VAT = 'current_sales_price_excl_vat';
+    public const CURRENT_SALES_PRICE_INCL_VAT = 'current_sales_price_incl_vat';
+    public const PURCHASE_PRICE = 'purchase_price';
+    public const PURCHASE_PRICE_EXCL_VAT = 'purchase_price_excl_vat';
+    public const PURCHASE_PRICE_INCL_VAT = 'purchase_price_incl_vat';
+    public const SHIPPING_COST = 'shipping_cost';
+    public const AVAILABLE_STOCK = 'available_stock';
 
     /**
      * @return string|null
@@ -41,12 +44,27 @@ interface SaleUnitInterface
     /**
      * @return float|null
      */
+    public function getCurrentSalesPriceExclVat();
+
+    /**
+     * @return float|null
+     */
     public function getCurrentSalesPriceInclVat();
 
     /**
      * @return float
      */
     public function getPurchasePrice();
+
+    /**
+     * @return float|null
+     */
+    public function getPurchasePriceExclVat();
+
+    /**
+     * @return float|null
+     */
+    public function getPurchasePriceInclVat();
 
     /**
      * @return float|null
@@ -60,55 +78,73 @@ interface SaleUnitInterface
 
     /**
      * @param string $id
-     * @return \Tess\PricingTool\Api\Data\SaleUnitInterface
+     * @return \Combipower\TessAI\Api\Data\SaleUnitInterface
      */
     public function setId($id);
 
     /**
      * @param string $saleId
-     * @return \Tess\PricingTool\Api\Data\SaleUnitInterface
+     * @return \Combipower\TessAI\Api\Data\SaleUnitInterface
      */
     public function setSaleId($saleId);
 
     /**
      * @param string $label
-     * @return \Tess\PricingTool\Api\Data\SaleUnitInterface
+     * @return \Combipower\TessAI\Api\Data\SaleUnitInterface
      */
     public function setLabel($label);
 
     /**
      * @param float|null $value
-     * @return \Tess\PricingTool\Api\Data\SaleUnitInterface
+     * @return \Combipower\TessAI\Api\Data\SaleUnitInterface
      */
     public function setValue($value);
 
     /**
      * @param string|null $currency
-     * @return \Tess\PricingTool\Api\Data\SaleUnitInterface
+     * @return \Combipower\TessAI\Api\Data\SaleUnitInterface
      */
     public function setCurrency($currency);
 
     /**
      * @param float|null $price
-     * @return \Tess\PricingTool\Api\Data\SaleUnitInterface
+     * @return \Combipower\TessAI\Api\Data\SaleUnitInterface
+     */
+    public function setCurrentSalesPriceExclVat($price);
+
+    /**
+     * @param float|null $price
+     * @return \Combipower\TessAI\Api\Data\SaleUnitInterface
      */
     public function setCurrentSalesPriceInclVat($price);
 
     /**
      * @param float|null $price
-     * @return \Tess\PricingTool\Api\Data\SaleUnitInterface
+     * @return \Combipower\TessAI\Api\Data\SaleUnitInterface
      */
     public function setPurchasePrice($price);
 
     /**
+     * @param float|null $price
+     * @return \Combipower\TessAI\Api\Data\SaleUnitInterface
+     */
+    public function setPurchasePriceExclVat($price);
+
+    /**
+     * @param float|null $price
+     * @return \Combipower\TessAI\Api\Data\SaleUnitInterface
+     */
+    public function setPurchasePriceInclVat($price);
+
+    /**
      * @param float|null $cost
-     * @return \Tess\PricingTool\Api\Data\SaleUnitInterface
+     * @return \Combipower\TessAI\Api\Data\SaleUnitInterface
      */
     public function setShippingCost($cost);
 
     /**
      * @param float|null $stock
-     * @return \Tess\PricingTool\Api\Data\SaleUnitInterface
+     * @return \Combipower\TessAI\Api\Data\SaleUnitInterface
      */
     public function setAvailableStock($stock);
 

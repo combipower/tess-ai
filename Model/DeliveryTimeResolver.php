@@ -1,5 +1,5 @@
 <?php
-namespace Tess\PricingTool\Model;
+namespace Combipower\TessAI\Model;
 
 use GbiVarpo\DeliveryTime\Helper\Data as DeliveryTimeHelper;
 use GbiVarpo\Inventory\Helper\Data as InventoryHelper;

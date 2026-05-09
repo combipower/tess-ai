@@ -1,13 +1,13 @@
 <?php
-namespace Tess\PricingTool\Model;
+namespace Combipower\TessAI\Model;
 
 use Magento\Catalog\Helper\Data as CatalogHelper;
 use Magento\Catalog\Model\Product;
 use Magento\CatalogInventory\Api\StockRegistryInterface;
 use Magento\Framework\App\ObjectManager;
-use Tess\PricingTool\Api\Data\ProductInterface;
-use Tess\PricingTool\Model\Data\ProductFactory;
-use Tess\PricingTool\Model\Data\SaleUnitFactory;
+use Combipower\TessAI\Api\Data\ProductInterface;
+use Combipower\TessAI\Model\Data\ProductFactory;
+use Combipower\TessAI\Model\Data\SaleUnitFactory;
 
 class ProductMapper
 {
@@ -48,6 +48,11 @@ class ProductMapper
      */
     private $deliveryTimeResolver;
 
+    /**
+     * @var OrderQuantityResolver
+     */
+    private $orderQuantityResolver;
+
     public function __construct(
         ProductFactory $productFactory,
         SaleUnitFactory $saleUnitFactory,
@@ -55,7 +60,8 @@ class ProductMapper
         AttributeProvider $attributeProvider,
         CatalogHelper $catalogHelper,
         ShippingCostResolver $shippingCostResolver = null,
-        DeliveryTimeResolver $deliveryTimeResolver = null
+        DeliveryTimeResolver $deliveryTimeResolver = null,
+        OrderQuantityResolver $orderQuantityResolver = null
     ) {
         $this->productFactory = $productFactory;
         $this->saleUnitFactory = $saleUnitFactory;
@@ -64,6 +70,7 @@ class ProductMapper
         $this->catalogHelper = $catalogHelper;
         $this->shippingCostResolver = $shippingCostResolver;
         $this->deliveryTimeResolver = $deliveryTimeResolver;
+        $this->orderQuantityResolver = $orderQuantityResolver;
     }
 
     /**
@@ -104,10 +111,15 @@ class ProductMapper
                     ->setLabel($this->resolveSaleUnitLabel($unitLabel, $unitAmount))
                     ->setValue($unitPriceExclVat)
                     ->setCurrency($currencyCode)
+                    ->setCurrentSalesPriceExclVat($unitPriceExclVat)
                     ->setCurrentSalesPriceInclVat(
                         $this->resolveProductPriceInclVat($catalogProduct, $unitPriceExclVat)
                     )
                     ->setPurchasePrice($purchasePrice)
+                    ->setPurchasePriceExclVat($purchasePrice)
+                    ->setPurchasePriceInclVat(
+                        $this->applyTaxToPrice($catalogProduct, $purchasePrice)
+                    )
                     ->setShippingCost($this->getShippingCostResolver()->resolve($catalogProduct, $unitAmount))
                     ->setAvailableStock($stockQty);
             }
@@ -121,6 +133,7 @@ class ProductMapper
             ->setId((string) $catalogProduct->getId())
             ->setArticleNumber((string) $catalogProduct->getSku())
             ->setBarcode($barcodeValue)
+            ->setEan($barcodeValue)
             ->setManufacturerNumber(
                 $this->normalizeString(
                     $this->attributeProvider->getProductAttributeValue(
@@ -135,13 +148,41 @@ class ProductMapper
                     $this->attributeProvider->getProductAttributeValue($catalogProduct, $brandAttributeCode)
                 )
             )
+            ->setArticleGroup(null)
             ->setDeliveryTime(
                 $this->resolveDeliveryTime($catalogProduct)
             )
             ->setProductType($this->normalizeString($catalogProduct->getTypeId()))
             ->setPrice($priceValues)
+            ->setSpecialPrice($this->normalizeDecimal($catalogProduct->getSpecialPrice()))
+            ->setOrderNumber($this->resolveOrderQuantity($catalogProduct))
             ->setCategoryId($categoryId)
             ->setSaleUnits($saleUnits);
+    }
+
+    /**
+     * @param Product $catalogProduct
+     * @return float
+     */
+    private function resolveOrderQuantity(Product $catalogProduct)
+    {
+        try {
+            return $this->getOrderQuantityResolver()->resolve((int) $catalogProduct->getId());
+        } catch (\Throwable $exception) {
+            return 0.0;
+        }
+    }
+
+    /**
+     * @return OrderQuantityResolver
+     */
+    private function getOrderQuantityResolver()
+    {
+        if ($this->orderQuantityResolver === null) {
+            $this->orderQuantityResolver = ObjectManager::getInstance()->get(OrderQuantityResolver::class);
+        }
+
+        return $this->orderQuantityResolver;
     }
 
     /**
@@ -361,6 +402,18 @@ class ProductMapper
             }
         }
 
+        return $this->applyTaxToPrice($catalogProduct, $price);
+    }
+
+    /**
+     * Apply product tax to a given excl-VAT price. Returns null when input is null.
+     *
+     * @param Product $catalogProduct
+     * @param float|null $price
+     * @return float|null
+     */
+    private function applyTaxToPrice(Product $catalogProduct, $price)
+    {
         if ($price === null) {
             return null;
         }
@@ -392,7 +445,7 @@ class ProductMapper
      * @param Product $catalogProduct
      * @param string|null $currencyCode
      * @param string|null $unitAttributeCode
-     * @return \Tess\PricingTool\Api\Data\SaleUnitInterface[]
+     * @return \Combipower\TessAI\Api\Data\SaleUnitInterface[]
      */
     private function resolveConfigurableSaleUnits(
         Product $catalogProduct,
@@ -420,8 +473,11 @@ class ProductMapper
                 ->setLabel($this->resolveConfigurableSaleUnitLabel($childProduct, $unitAttributeCode, $childSku))
                 ->setValue($unitPriceExclVat)
                 ->setCurrency($currencyCode)
+                ->setCurrentSalesPriceExclVat($unitPriceExclVat)
                 ->setCurrentSalesPriceInclVat($this->resolveProductPriceInclVat($childProduct, $unitPriceExclVat))
                 ->setPurchasePrice($purchasePrice)
+                ->setPurchasePriceExclVat($purchasePrice)
+                ->setPurchasePriceInclVat($this->applyTaxToPrice($childProduct, $purchasePrice))
                 ->setShippingCost($this->getShippingCostResolver()->resolve($childProduct))
                 ->setAvailableStock($this->resolveStockQty($childProduct));
         }

@@ -1,12 +1,12 @@
 <?php
-namespace Tess\PricingTool\Model;
+namespace Combipower\TessAI\Model;
 
 use Magento\Catalog\Api\ProductRepositoryInterface as CatalogProductRepositoryInterface;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory as ProductCollectionFactory;
 use Magento\Store\Model\StoreManagerInterface;
-use Tess\PricingTool\Api\ProductManagementInterface;
-use Tess\PricingTool\Model\Data\PaginationMetaFactory;
-use Tess\PricingTool\Model\Data\ProductListFactory;
+use Combipower\TessAI\Api\ProductManagementInterface;
+use Combipower\TessAI\Model\Data\PaginationMetaFactory;
+use Combipower\TessAI\Model\Data\ProductListFactory;
 
 class ProductManagement implements ProductManagementInterface
 {

@@ -1,12 +1,12 @@
 <?php
-namespace Tess\PricingTool\Model;
+namespace Combipower\TessAI\Model;
 
 use Magento\Catalog\Model\Product;
 use Magento\Customer\Model\Group;
 use Magento\Framework\DataObjectFactory;
 use Magento\Quote\Model\QuoteFactory;
 use Magento\Store\Model\StoreManagerInterface;
-use Tess\PricingTool\Model\Config\ShippingEstimate;
+use Combipower\TessAI\Model\Config\ShippingEstimate;
 
 class ShippingCostResolver
 {

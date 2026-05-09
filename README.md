@@ -1,23 +1,23 @@
-# Tess_PricingTool
+# Combipower_TessAI
 
-Base Magento 2 module for the TESS Pricing Tool REST integration.
+Base Magento 2 module for the Combipower TESS AI REST integration.
 
 ## Exposed endpoints
 
-- `GET /rest/<store_code>/V1/tess/pricing/categories`
-- `GET /rest/<store_code>/V1/tess/pricing/filters`
-- `GET /rest/<store_code>/V1/tess/pricing/products`
-- `GET /rest/<store_code>/V1/tess/pricing/products/{sku}`
+- `GET /rest/<store_code>/V1/tessAi/categories`
+- `GET /rest/<store_code>/V1/tessAi/filters`
+- `GET /rest/<store_code>/V1/tessAi/products`
+- `GET /rest/<store_code>/V1/tessAi/products/{sku}`
 
 ## Authentication
 
 The API routes are protected by the custom ACL resource:
 
-- `Tess_PricingTool::read`
+- `Combipower_TessAI::read`
 
 The admin configuration section uses:
 
-- `Tess_PricingTool::config`
+- `Combipower_TessAI::config`
 
 Use an integration token or admin token with the required permission.
 
@@ -25,7 +25,7 @@ Use an integration token or admin token with the required permission.
 
 Product attribute codes used by the API are configurable in Admin:
 
-- `Stores > Configuration > TESS > TESS Pricing Tool > Attribute Mapping`
+- `Stores > Configuration > Combipower > TESS AI > Attribute Mapping`
 
 The module reads attribute codes from this configuration per store scope instead of hardcoded codes.
 
@@ -35,7 +35,7 @@ The API field `shipping_cost` is calculated by creating a temporary quote with t
 
 Configure the destination in Admin:
 
-- `Stores > Configuration > TESS > TESS Pricing Tool > Shipping Estimate`
+- `Stores > Configuration > Combipower > TESS AI > Shipping Estimate`
 
 Defaults are set to Netherlands:
 
@@ -51,14 +51,14 @@ If `Shipping Method Code` is empty, the API uses the cheapest available shipping
 Install module via Composer:
 
 ```bash
-composer config repositories.tess/pricing-tool vcs git@github.com:combipower/tess-ai.git
-composer require tess/pricing-tool:dev-main
+composer config repositories.combipower/tess-ai vcs git@github.com:combipower/tess-ai.git
+composer require combipower/tess-ai:dev-main
 ```
 
 Then enable the module and register it with Magento:
 
 ```bash
-php bin/magento module:enable Tess_PricingTool
+php bin/magento module:enable Combipower_TessAI
 php bin/magento setup:upgrade
 php bin/magento setup:di:compile
 php bin/magento cache:flush

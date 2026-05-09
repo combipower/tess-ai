@@ -1,8 +1,8 @@
 <?php
-namespace Tess\PricingTool\Model\Data;
+namespace Combipower\TessAI\Model\Data;
 
 use Magento\Framework\Api\AbstractSimpleObject;
-use Tess\PricingTool\Api\Data\ProductInterface;
+use Combipower\TessAI\Api\Data\ProductInterface;
 
 class Product extends AbstractSimpleObject implements ProductInterface
 {
@@ -21,6 +21,11 @@ class Product extends AbstractSimpleObject implements ProductInterface
         return $this->_get(self::BARCODE);
     }
 
+    public function getEan()
+    {
+        return $this->_get(self::EAN);
+    }
+
     public function getManufacturerNumber()
     {
         return $this->_get(self::MANUFACTURER_NUMBER);
@@ -36,6 +41,11 @@ class Product extends AbstractSimpleObject implements ProductInterface
         return $this->_get(self::BRAND_DGE);
     }
 
+    public function getArticleGroup()
+    {
+        return $this->_get(self::ARTICLE_GROUP);
+    }
+
     public function getDeliveryTime()
     {
         return $this->_get(self::DELIVERY_TIME);
@@ -49,6 +59,16 @@ class Product extends AbstractSimpleObject implements ProductInterface
     public function getPrice()
     {
         return $this->_get(self::PRICE);
+    }
+
+    public function getSpecialPrice()
+    {
+        return $this->_get(self::SPECIAL_PRICE);
+    }
+
+    public function getOrderNumber()
+    {
+        return $this->_get(self::ORDER_NUMBER);
     }
 
     public function getCategoryId()
@@ -76,6 +96,11 @@ class Product extends AbstractSimpleObject implements ProductInterface
         return $this->setData(self::BARCODE, $barcode);
     }
 
+    public function setEan($ean)
+    {
+        return $this->setData(self::EAN, $ean);
+    }
+
     public function setManufacturerNumber($manufacturerNumber)
     {
         return $this->setData(self::MANUFACTURER_NUMBER, $manufacturerNumber);
@@ -91,6 +116,11 @@ class Product extends AbstractSimpleObject implements ProductInterface
         return $this->setData(self::BRAND_DGE, $brandDge);
     }
 
+    public function setArticleGroup($articleGroup)
+    {
+        return $this->setData(self::ARTICLE_GROUP, $articleGroup);
+    }
+
     public function setDeliveryTime($deliveryTime)
     {
         return $this->setData(self::DELIVERY_TIME, $deliveryTime);
@@ -104,6 +134,16 @@ class Product extends AbstractSimpleObject implements ProductInterface
     public function setPrice(array $price)
     {
         return $this->setData(self::PRICE, $price);
+    }
+
+    public function setSpecialPrice($specialPrice)
+    {
+        return $this->setData(self::SPECIAL_PRICE, $specialPrice);
+    }
+
+    public function setOrderNumber($orderNumber)
+    {
+        return $this->setData(self::ORDER_NUMBER, $orderNumber);
     }
 
     public function setCategoryId($categoryId)

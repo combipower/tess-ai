@@ -1,12 +1,12 @@
 <?php
-namespace Tess\PricingTool\Model;
+namespace Combipower\TessAI\Model;
 
 use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory as CategoryCollectionFactory;
 use Magento\Store\Model\StoreManagerInterface;
-use Tess\PricingTool\Api\CategoryManagementInterface;
-use Tess\PricingTool\Model\Data\CategoryFactory;
-use Tess\PricingTool\Model\Data\CategoryListFactory;
+use Combipower\TessAI\Api\CategoryManagementInterface;
+use Combipower\TessAI\Model\Data\CategoryFactory;
+use Combipower\TessAI\Model\Data\CategoryListFactory;
 
 class CategoryManagement implements CategoryManagementInterface
 {

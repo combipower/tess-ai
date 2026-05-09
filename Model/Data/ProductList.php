@@ -1,8 +1,8 @@
 <?php
-namespace Tess\PricingTool\Model\Data;
+namespace Combipower\TessAI\Model\Data;
 
 use Magento\Framework\Api\AbstractSimpleObject;
-use Tess\PricingTool\Api\Data\ProductListInterface;
+use Combipower\TessAI\Api\Data\ProductListInterface;
 
 class ProductList extends AbstractSimpleObject implements ProductListInterface
 {
@@ -16,7 +16,7 @@ class ProductList extends AbstractSimpleObject implements ProductListInterface
         return $this->_get(self::ITEMS);
     }
 
-    public function setMeta(\Tess\PricingTool\Api\Data\PaginationMetaInterface $meta)
+    public function setMeta(\Combipower\TessAI\Api\Data\PaginationMetaInterface $meta)
     {
         return $this->setData(self::META, $meta);
     }

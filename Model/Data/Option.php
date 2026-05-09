@@ -1,8 +1,8 @@
 <?php
-namespace Tess\PricingTool\Model\Data;
+namespace Combipower\TessAI\Model\Data;
 
 use Magento\Framework\Api\AbstractSimpleObject;
-use Tess\PricingTool\Api\Data\OptionInterface;
+use Combipower\TessAI\Api\Data\OptionInterface;
 
 class Option extends AbstractSimpleObject implements OptionInterface
 {

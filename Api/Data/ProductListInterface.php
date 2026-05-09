@@ -1,5 +1,5 @@
 <?php
-namespace Tess\PricingTool\Api\Data;
+namespace Combipower\TessAI\Api\Data;
 
 interface ProductListInterface
 {
@@ -7,24 +7,24 @@ interface ProductListInterface
     const ITEMS = 'items';
 
     /**
-     * @return \Tess\PricingTool\Api\Data\PaginationMetaInterface|null
+     * @return \Combipower\TessAI\Api\Data\PaginationMetaInterface|null
      */
     public function getMeta();
 
     /**
-     * @return \Tess\PricingTool\Api\Data\ProductInterface[]|null
+     * @return \Combipower\TessAI\Api\Data\ProductInterface[]|null
      */
     public function getItems();
 
     /**
-     * @param \Tess\PricingTool\Api\Data\PaginationMetaInterface $meta
-     * @return \Tess\PricingTool\Api\Data\ProductListInterface
+     * @param \Combipower\TessAI\Api\Data\PaginationMetaInterface $meta
+     * @return \Combipower\TessAI\Api\Data\ProductListInterface
      */
-    public function setMeta(\Tess\PricingTool\Api\Data\PaginationMetaInterface $meta);
+    public function setMeta(\Combipower\TessAI\Api\Data\PaginationMetaInterface $meta);
 
     /**
-     * @param \Tess\PricingTool\Api\Data\ProductInterface[] $items
-     * @return \Tess\PricingTool\Api\Data\ProductListInterface
+     * @param \Combipower\TessAI\Api\Data\ProductInterface[] $items
+     * @return \Combipower\TessAI\Api\Data\ProductListInterface
      */
     public function setItems(array $items);
 }

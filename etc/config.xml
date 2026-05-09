@@ -2,7 +2,7 @@
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Store:etc/config.xsd">
     <default>
-        <tess_pricing_tool>
+        <combipower_tess_ai>
             <attribute_mapping>
                 <supplier_attribute>supplier_id</supplier_attribute>
                 <brand_attribute>manufacture_brand</brand_attribute>
@@ -16,6 +16,6 @@
                 <city>Amsterdam</city>
                 <street>Dam 1</street>
             </shipping_estimate>
-        </tess_pricing_tool>
+        </combipower_tess_ai>
     </default>
 </config>

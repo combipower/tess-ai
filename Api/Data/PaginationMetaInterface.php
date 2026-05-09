@@ -1,5 +1,5 @@
 <?php
-namespace Tess\PricingTool\Api\Data;
+namespace Combipower\TessAI\Api\Data;
 
 interface PaginationMetaInterface
 {
@@ -24,19 +24,19 @@ interface PaginationMetaInterface
 
     /**
      * @param int $total
-     * @return \Tess\PricingTool\Api\Data\PaginationMetaInterface
+     * @return \Combipower\TessAI\Api\Data\PaginationMetaInterface
      */
     public function setTotal($total);
 
     /**
      * @param int $page
-     * @return \Tess\PricingTool\Api\Data\PaginationMetaInterface
+     * @return \Combipower\TessAI\Api\Data\PaginationMetaInterface
      */
     public function setPage($page);
 
     /**
      * @param int $perPage
-     * @return \Tess\PricingTool\Api\Data\PaginationMetaInterface
+     * @return \Combipower\TessAI\Api\Data\PaginationMetaInterface
      */
     public function setPerPage($perPage);
 }

@@ -1,8 +1,8 @@
 <?php
-namespace Tess\PricingTool\Model\Data;
+namespace Combipower\TessAI\Model\Data;
 
 use Magento\Framework\Api\AbstractSimpleObject;
-use Tess\PricingTool\Api\Data\CategoryInterface;
+use Combipower\TessAI\Api\Data\CategoryInterface;
 
 class Category extends AbstractSimpleObject implements CategoryInterface
 {

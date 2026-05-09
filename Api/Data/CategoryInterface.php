@@ -1,5 +1,5 @@
 <?php
-namespace Tess\PricingTool\Api\Data;
+namespace Combipower\TessAI\Api\Data;
 
 interface CategoryInterface
 {
@@ -30,25 +30,25 @@ interface CategoryInterface
 
     /**
      * @param string $id
-     * @return \Tess\PricingTool\Api\Data\CategoryInterface
+     * @return \Combipower\TessAI\Api\Data\CategoryInterface
      */
     public function setId($id);
 
     /**
      * @param string $name
-     * @return \Tess\PricingTool\Api\Data\CategoryInterface
+     * @return \Combipower\TessAI\Api\Data\CategoryInterface
      */
     public function setName($name);
 
     /**
      * @param string|null $parentId
-     * @return \Tess\PricingTool\Api\Data\CategoryInterface
+     * @return \Combipower\TessAI\Api\Data\CategoryInterface
      */
     public function setParentId($parentId);
 
     /**
      * @param int $depth
-     * @return \Tess\PricingTool\Api\Data\CategoryInterface
+     * @return \Combipower\TessAI\Api\Data\CategoryInterface
      */
     public function setDepth($depth);
 }

@@ -1,5 +1,5 @@
 <?php
-namespace Tess\PricingTool\Model\Config;
+namespace Combipower\TessAI\Model\Config;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Model\ScopeInterface;
@@ -7,11 +7,11 @@ use Magento\Store\Model\StoreManagerInterface;
 
 class AttributeMapping
 {
-    public const XML_PATH_SUPPLIER_ATTRIBUTE = 'tess_pricing_tool/attribute_mapping/supplier_attribute';
-    public const XML_PATH_BRAND_ATTRIBUTE = 'tess_pricing_tool/attribute_mapping/brand_attribute';
-    public const XML_PATH_BARCODE_ATTRIBUTE = 'tess_pricing_tool/attribute_mapping/barcode_attribute';
-    public const XML_PATH_MANUFACTURER_NUMBER_ATTRIBUTE = 'tess_pricing_tool/attribute_mapping/manufacturer_number_attribute';
-    public const XML_PATH_UNIT_ATTRIBUTE = 'tess_pricing_tool/attribute_mapping/unit_attribute';
+    public const XML_PATH_SUPPLIER_ATTRIBUTE = 'combipower_tess_ai/attribute_mapping/supplier_attribute';
+    public const XML_PATH_BRAND_ATTRIBUTE = 'combipower_tess_ai/attribute_mapping/brand_attribute';
+    public const XML_PATH_BARCODE_ATTRIBUTE = 'combipower_tess_ai/attribute_mapping/barcode_attribute';
+    public const XML_PATH_MANUFACTURER_NUMBER_ATTRIBUTE = 'combipower_tess_ai/attribute_mapping/manufacturer_number_attribute';
+    public const XML_PATH_UNIT_ATTRIBUTE = 'combipower_tess_ai/attribute_mapping/unit_attribute';
 
     /**
      * @var ScopeConfigInterface

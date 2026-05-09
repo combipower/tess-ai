@@ -1,8 +1,8 @@
 {
-    "name": "tess/pricing-tool",
-    "description": "Base Magento 2 REST APIs for the TESS Pricing Tool integration.",
+    "name": "combipower/tess-ai",
+    "description": "Base Magento 2 REST APIs for the Combipower TESS AI integration.",
     "type": "magento2-module",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "license": [
         "proprietary"
     ],
@@ -11,7 +11,7 @@
             "registration.php"
         ],
         "psr-4": {
-            "Tess\\PricingTool\\": ""
+            "Combipower\\TessAI\\": ""
         }
     }
 }

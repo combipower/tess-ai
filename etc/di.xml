@@ -1,15 +1,15 @@
 <?xml version="1.0"?>
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
-    <preference for="Tess\PricingTool\Api\CategoryManagementInterface" type="Tess\PricingTool\Model\CategoryManagement" />
-    <preference for="Tess\PricingTool\Api\FilterManagementInterface" type="Tess\PricingTool\Model\FilterManagement" />
-    <preference for="Tess\PricingTool\Api\ProductManagementInterface" type="Tess\PricingTool\Model\ProductManagement" />
+    <preference for="Combipower\TessAI\Api\CategoryManagementInterface" type="Combipower\TessAI\Model\CategoryManagement" />
+    <preference for="Combipower\TessAI\Api\FilterManagementInterface" type="Combipower\TessAI\Model\FilterManagement" />
+    <preference for="Combipower\TessAI\Api\ProductManagementInterface" type="Combipower\TessAI\Model\ProductManagement" />
 
-    <preference for="Tess\PricingTool\Api\Data\CategoryInterface" type="Tess\PricingTool\Model\Data\Category" />
-    <preference for="Tess\PricingTool\Api\Data\CategoryListInterface" type="Tess\PricingTool\Model\Data\CategoryList" />
-    <preference for="Tess\PricingTool\Api\Data\OptionInterface" type="Tess\PricingTool\Model\Data\Option" />
-    <preference for="Tess\PricingTool\Api\Data\FilterOptionsInterface" type="Tess\PricingTool\Model\Data\FilterOptions" />
-    <preference for="Tess\PricingTool\Api\Data\PaginationMetaInterface" type="Tess\PricingTool\Model\Data\PaginationMeta" />
-    <preference for="Tess\PricingTool\Api\Data\SaleUnitInterface" type="Tess\PricingTool\Model\Data\SaleUnit" />
-    <preference for="Tess\PricingTool\Api\Data\ProductInterface" type="Tess\PricingTool\Model\Data\Product" />
-    <preference for="Tess\PricingTool\Api\Data\ProductListInterface" type="Tess\PricingTool\Model\Data\ProductList" />
+    <preference for="Combipower\TessAI\Api\Data\CategoryInterface" type="Combipower\TessAI\Model\Data\Category" />
+    <preference for="Combipower\TessAI\Api\Data\CategoryListInterface" type="Combipower\TessAI\Model\Data\CategoryList" />
+    <preference for="Combipower\TessAI\Api\Data\OptionInterface" type="Combipower\TessAI\Model\Data\Option" />
+    <preference for="Combipower\TessAI\Api\Data\FilterOptionsInterface" type="Combipower\TessAI\Model\Data\FilterOptions" />
+    <preference for="Combipower\TessAI\Api\Data\PaginationMetaInterface" type="Combipower\TessAI\Model\Data\PaginationMeta" />
+    <preference for="Combipower\TessAI\Api\Data\SaleUnitInterface" type="Combipower\TessAI\Model\Data\SaleUnit" />
+    <preference for="Combipower\TessAI\Api\Data\ProductInterface" type="Combipower\TessAI\Model\Data\Product" />
+    <preference for="Combipower\TessAI\Api\Data\ProductListInterface" type="Combipower\TessAI\Model\Data\ProductList" />
 </config>

@@ -1,5 +1,5 @@
 <?php
-namespace Tess\PricingTool\Model\Config;
+namespace Combipower\TessAI\Model\Config;
 
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Store\Model\ScopeInterface;
@@ -7,13 +7,13 @@ use Magento\Store\Model\StoreManagerInterface;
 
 class ShippingEstimate
 {
-    public const XML_PATH_COUNTRY_ID = 'tess_pricing_tool/shipping_estimate/country_id';
-    public const XML_PATH_REGION_ID = 'tess_pricing_tool/shipping_estimate/region_id';
-    public const XML_PATH_REGION = 'tess_pricing_tool/shipping_estimate/region';
-    public const XML_PATH_POSTCODE = 'tess_pricing_tool/shipping_estimate/postcode';
-    public const XML_PATH_CITY = 'tess_pricing_tool/shipping_estimate/city';
-    public const XML_PATH_STREET = 'tess_pricing_tool/shipping_estimate/street';
-    public const XML_PATH_SHIPPING_METHOD = 'tess_pricing_tool/shipping_estimate/shipping_method';
+    public const XML_PATH_COUNTRY_ID = 'combipower_tess_ai/shipping_estimate/country_id';
+    public const XML_PATH_REGION_ID = 'combipower_tess_ai/shipping_estimate/region_id';
+    public const XML_PATH_REGION = 'combipower_tess_ai/shipping_estimate/region';
+    public const XML_PATH_POSTCODE = 'combipower_tess_ai/shipping_estimate/postcode';
+    public const XML_PATH_CITY = 'combipower_tess_ai/shipping_estimate/city';
+    public const XML_PATH_STREET = 'combipower_tess_ai/shipping_estimate/street';
+    public const XML_PATH_SHIPPING_METHOD = 'combipower_tess_ai/shipping_estimate/shipping_method';
 
     /**
      * @var ScopeConfigInterface
