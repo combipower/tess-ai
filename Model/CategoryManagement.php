@@ -63,17 +63,44 @@ class CategoryManagement implements CategoryManagementInterface
         $collection->addFieldToFilter('path', ['like' => $rootCategory->getPath() . '/%']);
         $collection->addAttributeToSort('path', 'ASC');
 
-        $items = [];
-        foreach ($collection as $category) {
-            $parentId = (int) $category->getParentId() === $rootCategoryId
-                ? null
-                : (string) $category->getParentId();
+        $byId = [];
+        $childIdsByParent = [];
+        $rootIds = [];
 
-            $items[] = $this->categoryFactory->create()
-                ->setId((string) $category->getId())
+        foreach ($collection as $category) {
+            $id = (string) $category->getId();
+            $rawParentId = (int) $category->getParentId();
+            $parentId = $rawParentId === $rootCategoryId ? null : (string) $rawParentId;
+
+            $byId[$id] = $this->categoryFactory->create()
+                ->setId($id)
                 ->setName((string) $category->getName())
                 ->setParentId($parentId)
-                ->setDepth(max((int) $category->getLevel() - $rootLevel - 1, 0));
+                ->setDepth(max((int) $category->getLevel() - $rootLevel - 1, 0))
+                ->setChildren([]);
+
+            if ($parentId === null) {
+                $rootIds[] = $id;
+            } else {
+                $childIdsByParent[$parentId][] = $id;
+            }
+        }
+
+        foreach ($childIdsByParent as $parentId => $childIds) {
+            if (!isset($byId[$parentId])) {
+                continue;
+            }
+
+            $childObjects = [];
+            foreach ($childIds as $childId) {
+                $childObjects[] = $byId[$childId];
+            }
+            $byId[$parentId]->setChildren($childObjects);
+        }
+
+        $items = [];
+        foreach ($rootIds as $rootId) {
+            $items[] = $byId[$rootId];
         }
 
         return $this->categoryListFactory->create()->setItems($items);

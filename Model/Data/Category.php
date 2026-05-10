@@ -26,6 +26,11 @@ class Category extends AbstractSimpleObject implements CategoryInterface
         return $this->_get(self::DEPTH);
     }
 
+    public function getChildren()
+    {
+        return $this->_get(self::CHILDREN) ?: [];
+    }
+
     public function setId($id)
     {
         return $this->setData(self::ID, $id);
@@ -44,5 +49,10 @@ class Category extends AbstractSimpleObject implements CategoryInterface
     public function setDepth($depth)
     {
         return $this->setData(self::DEPTH, $depth);
+    }
+
+    public function setChildren(array $children)
+    {
+        return $this->setData(self::CHILDREN, $children);
     }
 }

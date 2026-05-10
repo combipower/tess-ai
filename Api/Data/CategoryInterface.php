@@ -3,10 +3,11 @@ namespace Combipower\TessAI\Api\Data;
 
 interface CategoryInterface
 {
-    const ID = 'id';
-    const NAME = 'name';
-    const PARENT_ID = 'parent_id';
-    const DEPTH = 'depth';
+    public const ID = 'id';
+    public const NAME = 'name';
+    public const PARENT_ID = 'parent_id';
+    public const DEPTH = 'depth';
+    public const CHILDREN = 'children';
 
     /**
      * @return string|null
@@ -27,6 +28,11 @@ interface CategoryInterface
      * @return int|null
      */
     public function getDepth();
+
+    /**
+     * @return \Combipower\TessAI\Api\Data\CategoryInterface[]
+     */
+    public function getChildren();
 
     /**
      * @param string $id
@@ -51,4 +57,10 @@ interface CategoryInterface
      * @return \Combipower\TessAI\Api\Data\CategoryInterface
      */
     public function setDepth($depth);
+
+    /**
+     * @param \Combipower\TessAI\Api\Data\CategoryInterface[] $children
+     * @return \Combipower\TessAI\Api\Data\CategoryInterface
+     */
+    public function setChildren(array $children);
 }
