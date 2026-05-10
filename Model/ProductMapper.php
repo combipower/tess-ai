@@ -53,6 +53,11 @@ class ProductMapper
      */
     private $orderQuantityResolver;
 
+    /**
+     * @var array<int, Product[]>
+     */
+    private $configurableChildrenCache = [];
+
     public function __construct(
         ProductFactory $productFactory,
         SaleUnitFactory $saleUnitFactory,
@@ -563,21 +568,66 @@ class ProductMapper
     }
 
     /**
+     * Load configurable children with explicit attribute selection so cost,
+     * special_price, tax_class_id and the configured unit attribute are
+     * available on each child. Magento's default getUsedProducts() only loads
+     * attributes flagged for product listing, which excludes cost.
+     *
      * @param Product $catalogProduct
      * @return Product[]
      */
     private function getConfigurableChildren(Product $catalogProduct)
     {
+        $productId = (int) $catalogProduct->getId();
+        if ($productId > 0 && isset($this->configurableChildrenCache[$productId])) {
+            return $this->configurableChildrenCache[$productId];
+        }
+
         try {
             $typeInstance = $catalogProduct->getTypeInstance();
-            if (!is_object($typeInstance) || !method_exists($typeInstance, 'getUsedProducts')) {
+            if (!is_object($typeInstance) || !method_exists($typeInstance, 'getUsedProductCollection')) {
                 return [];
             }
 
-            $children = $typeInstance->getUsedProducts($catalogProduct);
-            if (!is_array($children)) {
-                return [];
+            $collection = $typeInstance->getUsedProductCollection($catalogProduct);
+            $store = $catalogProduct->getStore();
+            if ($store) {
+                $collection->setStoreId($store->getId());
             }
+
+            $attributesToSelect = array_values(array_unique(array_filter([
+                'name',
+                'price',
+                'cost',
+                'special_price',
+                'tax_class_id',
+                'type_id',
+                $this->attributeProvider->getUnitAttributeCode(),
+            ])));
+            $collection->addAttributeToSelect($attributesToSelect);
+
+            if (method_exists($collection, 'addFilterByRequiredOptions')) {
+                $collection->addFilterByRequiredOptions();
+            }
+
+            $collection->joinField(
+                'qty',
+                'cataloginventory_stock_item',
+                'qty',
+                'product_id=entity_id',
+                '{{table}}.stock_id=1',
+                'left'
+            );
+            $collection->joinField(
+                'is_in_stock',
+                'cataloginventory_stock_item',
+                'is_in_stock',
+                'product_id=entity_id',
+                '{{table}}.stock_id=1',
+                'left'
+            );
+
+            $children = $collection->getItems();
         } catch (\Throwable $exception) {
             return [];
         }
@@ -597,7 +647,13 @@ class ProductMapper
         }
 
         ksort($result, SORT_NATURAL);
-        return array_values($result);
+        $result = array_values($result);
+
+        if ($productId > 0) {
+            $this->configurableChildrenCache[$productId] = $result;
+        }
+
+        return $result;
     }
 
     /**

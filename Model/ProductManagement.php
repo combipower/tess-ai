@@ -2,6 +2,9 @@
 namespace Combipower\TessAI\Model;
 
 use Magento\Catalog\Api\ProductRepositoryInterface as CatalogProductRepositoryInterface;
+use Magento\Catalog\Model\Product\Attribute\Source\Status as ProductStatus;
+use Magento\Catalog\Model\Product\Type as ProductType;
+use Magento\Catalog\Model\Product\Visibility as ProductVisibility;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory as ProductCollectionFactory;
 use Magento\Store\Model\StoreManagerInterface;
 use Combipower\TessAI\Api\ProductManagementInterface;
@@ -10,6 +13,13 @@ use Combipower\TessAI\Model\Data\ProductListFactory;
 
 class ProductManagement implements ProductManagementInterface
 {
+    private const ALLOWED_PRODUCT_TYPES = [
+        ProductType::TYPE_SIMPLE,
+        ProductType::TYPE_VIRTUAL,
+        'configurable',
+        'downloadable',
+    ];
+
     /**
      * @var ProductCollectionFactory
      */
@@ -85,6 +95,13 @@ class ProductManagement implements ProductManagementInterface
         $collection = $this->productCollectionFactory->create();
         $collection->setStoreId($store->getId());
         $collection->addStoreFilter($store);
+        $collection->addAttributeToFilter('status', ProductStatus::STATUS_ENABLED);
+        $collection->setVisibility([
+            ProductVisibility::VISIBILITY_IN_CATALOG,
+            ProductVisibility::VISIBILITY_IN_SEARCH,
+            ProductVisibility::VISIBILITY_BOTH,
+        ]);
+        $collection->addAttributeToFilter('type_id', ['in' => self::ALLOWED_PRODUCT_TYPES]);
         $collection->addAttributeToSelect([
             'name',
             'price',

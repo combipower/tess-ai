@@ -149,6 +149,17 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 
 List products with optional filters and pagination.
 
+### Default filters (always applied)
+
+The following filters are applied implicitly — disabled / hidden / unsupported products are never returned:
+
+| Filter | Value |
+|---|---|
+| Status | `enabled` only (excludes disabled) |
+| Visibility | `Catalog`, `Search`, `Catalog & Search` (excludes "Not Visible Individually" — typically configurable child variants) |
+| Product type | `simple`, `virtual`, `configurable`, `downloadable` only (excludes `bundle`, `grouped`, etc.) |
+| Store website | Current store's website (via `store_code` in the URL) |
+
 ### Query parameters
 
 | Param | Type | Default | Description |
