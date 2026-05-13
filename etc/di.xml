@@ -3,6 +3,7 @@
     <preference for="Combipower\TessAI\Api\CategoryManagementInterface" type="Combipower\TessAI\Model\CategoryManagement" />
     <preference for="Combipower\TessAI\Api\FilterManagementInterface" type="Combipower\TessAI\Model\FilterManagement" />
     <preference for="Combipower\TessAI\Api\ProductManagementInterface" type="Combipower\TessAI\Model\ProductManagement" />
+    <preference for="Combipower\TessAI\Api\DeliveryTimeProviderInterface" type="Combipower\TessAI\Model\DeliveryTime\ConfigDeliveryTimeProvider" />
 
     <preference for="Combipower\TessAI\Api\Data\CategoryInterface" type="Combipower\TessAI\Model\Data\Category" />
     <preference for="Combipower\TessAI\Api\Data\CategoryListInterface" type="Combipower\TessAI\Model\Data\CategoryList" />

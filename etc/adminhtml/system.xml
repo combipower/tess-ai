@@ -79,6 +79,21 @@
                     <comment>Optional carrier_method code, for example flatrate_flatrate. Leave empty to use the cheapest available rate.</comment>
                 </field>
             </group>
+
+            <group id="delivery_time" translate="label" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Delivery Time</label>
+
+                <field id="message_template" translate="label comment" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Delivery Message Template</label>
+                    <comment><![CDATA[Message returned as <code>delivery_time</code>. Use the <code>[DATE]</code> placeholder to inject the expected delivery date, e.g. <code>Verwachte leverdatum: [DATE]</code>. Leave empty to omit the field.]]></comment>
+                </field>
+
+                <field id="days" translate="label comment" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Shipping Days</label>
+                    <validate>validate-zero-or-greater-integer</validate>
+                    <comment>Number of days added to today when rendering [DATE]. Example: 3 → today + 3 days.</comment>
+                </field>
+            </group>
         </section>
     </system>
 </config>

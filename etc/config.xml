@@ -16,6 +16,10 @@
                 <city>Amsterdam</city>
                 <street>Dam 1</street>
             </shipping_estimate>
+            <delivery_time>
+                <message_template/>
+                <days>0</days>
+            </delivery_time>
         </combipower_tess_ai>
     </default>
 </config>

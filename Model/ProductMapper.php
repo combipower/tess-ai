@@ -6,6 +6,7 @@ use Magento\Catalog\Model\Product;
 use Magento\CatalogInventory\Api\StockRegistryInterface;
 use Magento\Framework\App\ObjectManager;
 use Combipower\TessAI\Api\Data\ProductInterface;
+use Combipower\TessAI\Api\DeliveryTimeProviderInterface;
 use Combipower\TessAI\Model\Data\ProductFactory;
 use Combipower\TessAI\Model\Data\SaleUnitFactory;
 
@@ -44,9 +45,9 @@ class ProductMapper
     private $shippingCostResolver;
 
     /**
-     * @var DeliveryTimeResolver
+     * @var DeliveryTimeProviderInterface
      */
-    private $deliveryTimeResolver;
+    private $deliveryTimeProvider;
 
     /**
      * @var OrderQuantityResolver
@@ -65,7 +66,7 @@ class ProductMapper
         AttributeProvider $attributeProvider,
         CatalogHelper $catalogHelper,
         ShippingCostResolver $shippingCostResolver = null,
-        DeliveryTimeResolver $deliveryTimeResolver = null,
+        DeliveryTimeProviderInterface $deliveryTimeProvider = null,
         OrderQuantityResolver $orderQuantityResolver = null
     ) {
         $this->productFactory = $productFactory;
@@ -74,7 +75,7 @@ class ProductMapper
         $this->attributeProvider = $attributeProvider;
         $this->catalogHelper = $catalogHelper;
         $this->shippingCostResolver = $shippingCostResolver;
-        $this->deliveryTimeResolver = $deliveryTimeResolver;
+        $this->deliveryTimeProvider = $deliveryTimeProvider;
         $this->orderQuantityResolver = $orderQuantityResolver;
     }
 
@@ -509,22 +510,22 @@ class ProductMapper
     private function resolveDeliveryTime(Product $catalogProduct)
     {
         try {
-            return $this->normalizeString($this->getDeliveryTimeResolver()->resolve($catalogProduct));
+            return $this->normalizeString($this->getDeliveryTimeProvider()->resolve($catalogProduct));
         } catch (\Throwable $exception) {
             return null;
         }
     }
 
     /**
-     * @return DeliveryTimeResolver
+     * @return DeliveryTimeProviderInterface
      */
-    private function getDeliveryTimeResolver()
+    private function getDeliveryTimeProvider()
     {
-        if ($this->deliveryTimeResolver === null) {
-            $this->deliveryTimeResolver = ObjectManager::getInstance()->get(DeliveryTimeResolver::class);
+        if ($this->deliveryTimeProvider === null) {
+            $this->deliveryTimeProvider = ObjectManager::getInstance()->get(DeliveryTimeProviderInterface::class);
         }
 
-        return $this->deliveryTimeResolver;
+        return $this->deliveryTimeProvider;
     }
 
     /**

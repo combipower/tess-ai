@@ -9,8 +9,6 @@
             <module name="Magento_Shipping" />
             <module name="Magento_Tax" />
             <module name="Magento_Webapi" />
-            <module name="GbiVarpo_Inventory" />
-            <module name="GbiVarpo_StockInfo" />
         </sequence>
     </module>
 </config>
