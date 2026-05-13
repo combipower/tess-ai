@@ -2,10 +2,14 @@
 namespace Combipower\TessAI\Model;
 
 use Magento\Catalog\Api\ProductRepositoryInterface as CatalogProductRepositoryInterface;
+use Magento\Catalog\Model\Indexer\Product\Price\PriceTableResolver;
 use Magento\Catalog\Model\Product\Attribute\Source\Status as ProductStatus;
 use Magento\Catalog\Model\Product\Type as ProductType;
 use Magento\Catalog\Model\Product\Visibility as ProductVisibility;
+use Magento\Catalog\Model\ResourceModel\Product\Collection as ProductCollection;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory as ProductCollectionFactory;
+use Magento\Framework\Indexer\DimensionFactory;
+use Magento\Store\Model\Indexer\WebsiteDimensionProvider;
 use Magento\Store\Model\StoreManagerInterface;
 use Combipower\TessAI\Api\ProductManagementInterface;
 use Combipower\TessAI\Model\Data\PaginationMetaFactory;
@@ -19,6 +23,12 @@ class ProductManagement implements ProductManagementInterface
         'configurable',
         'downloadable',
     ];
+
+    private const COST_ATTRIBUTE_CODE = 'cost';
+
+    private const PRICE_INDEX_ALIAS = 'price_index';
+
+    private const SORT_DEFAULT_DIRECTION = 'DESC';
 
     /**
      * @var ProductCollectionFactory
@@ -55,6 +65,16 @@ class ProductManagement implements ProductManagementInterface
      */
     private $paginationMetaFactory;
 
+    /**
+     * @var PriceTableResolver
+     */
+    private $priceTableResolver;
+
+    /**
+     * @var DimensionFactory
+     */
+    private $dimensionFactory;
+
     public function __construct(
         ProductCollectionFactory $productCollectionFactory,
         CatalogProductRepositoryInterface $productRepository,
@@ -62,7 +82,9 @@ class ProductManagement implements ProductManagementInterface
         AttributeProvider $attributeProvider,
         ProductMapper $productMapper,
         ProductListFactory $productListFactory,
-        PaginationMetaFactory $paginationMetaFactory
+        PaginationMetaFactory $paginationMetaFactory,
+        PriceTableResolver $priceTableResolver,
+        DimensionFactory $dimensionFactory
     ) {
         $this->productCollectionFactory = $productCollectionFactory;
         $this->productRepository = $productRepository;
@@ -71,6 +93,8 @@ class ProductManagement implements ProductManagementInterface
         $this->productMapper = $productMapper;
         $this->productListFactory = $productListFactory;
         $this->paginationMetaFactory = $paginationMetaFactory;
+        $this->priceTableResolver = $priceTableResolver;
+        $this->dimensionFactory = $dimensionFactory;
     }
 
     public function getList(
@@ -81,7 +105,13 @@ class ProductManagement implements ProductManagementInterface
         $ean = null,
         $stock = null,
         $page = 1,
-        $per_page = 50
+        $per_page = 50,
+        $price_from = null,
+        $price_to = null,
+        $purchase_price_from = null,
+        $purchase_price_to = null,
+        $sort_by = null,
+        $sort_order = null
     ) {
         $page = max(1, (int) $page);
         $perPage = min(max(1, (int) $per_page), 200);
@@ -162,6 +192,31 @@ class ProductManagement implements ProductManagementInterface
             $collection->addFieldToFilter('is_in_stock', 0);
         }
 
+        $this->joinPriceIndex($collection, (int) $store->getWebsiteId());
+
+        $priceFrom = $this->normalizeRangeBound($price_from);
+        $priceTo = $this->normalizeRangeBound($price_to);
+        if ($priceFrom !== null) {
+            $collection->getSelect()->where(self::PRICE_INDEX_ALIAS . '.min_price >= ?', $priceFrom);
+        }
+        if ($priceTo !== null) {
+            $collection->getSelect()->where(self::PRICE_INDEX_ALIAS . '.min_price <= ?', $priceTo);
+        }
+
+        $purchaseFrom = $this->normalizeRangeBound($purchase_price_from);
+        $purchaseTo = $this->normalizeRangeBound($purchase_price_to);
+        if ($purchaseFrom !== null && $this->attributeProvider->hasProductAttribute(self::COST_ATTRIBUTE_CODE)) {
+            $collection->addAttributeToFilter(self::COST_ATTRIBUTE_CODE, ['gteq' => $purchaseFrom]);
+        }
+        if ($purchaseTo !== null && $this->attributeProvider->hasProductAttribute(self::COST_ATTRIBUTE_CODE)) {
+            $collection->addAttributeToFilter(self::COST_ATTRIBUTE_CODE, ['lteq' => $purchaseTo]);
+        }
+
+        $collection->groupByAttribute('entity_id');
+
+        $this->applySort($collection, $sort_by, $sort_order);
+        $collection->getSelect()->order('e.entity_id ASC');
+
         $collection->setCurPage($page);
         $collection->setPageSize($perPage);
         $collection->addTierPriceData();
@@ -187,6 +242,113 @@ class ProductManagement implements ProductManagementInterface
         $product = $this->productRepository->get($sku, false, $store->getId(), true);
 
         return $this->productMapper->map($product);
+    }
+
+    /**
+     * Join the price index table so price-range filter and sort can target
+     * `min_price`. Uses PriceTableResolver to handle non-default dimension modes
+     * (e.g. when indexer/catalog_product_price/dimensions_mode = website the
+     * physical table is `catalog_product_index_price_ws<id>`).
+     *
+     * @param ProductCollection $collection
+     * @param int $websiteId
+     * @return void
+     */
+    private function joinPriceIndex(ProductCollection $collection, $websiteId)
+    {
+        $dimensions = [
+            $this->dimensionFactory->create(
+                WebsiteDimensionProvider::DIMENSION_NAME,
+                (string) $websiteId
+            ),
+        ];
+        $priceIndexTable = $this->priceTableResolver->resolve('catalog_product_index_price', $dimensions);
+
+        $collection->getSelect()->joinLeft(
+            [self::PRICE_INDEX_ALIAS => $priceIndexTable],
+            sprintf(
+                '%s.entity_id = e.entity_id AND %s.customer_group_id = 0 AND %s.website_id = %d',
+                self::PRICE_INDEX_ALIAS,
+                self::PRICE_INDEX_ALIAS,
+                self::PRICE_INDEX_ALIAS,
+                $websiteId
+            ),
+            []
+        );
+    }
+
+    /**
+     * Cast a raw query-string value to a non-negative float, or null when it
+     * cannot be used as a filter bound.
+     *
+     * @param mixed $value
+     * @return float|null
+     */
+    private function normalizeRangeBound($value)
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        if (!is_numeric($value)) {
+            return null;
+        }
+
+        $float = (float) $value;
+        if ($float < 0) {
+            return null;
+        }
+
+        return $float;
+    }
+
+    /**
+     * Apply whitelisted sort_by/sort_order to the collection.
+     *
+     * `order_number` is intentionally omitted in this phase — it is a computed
+     * field aggregated from sales_order_item and has no sortable column.
+     *
+     * @param ProductCollection $collection
+     * @param mixed $sortBy
+     * @param mixed $sortOrder
+     * @return void
+     */
+    private function applySort(ProductCollection $collection, $sortBy, $sortOrder)
+    {
+        if ($sortBy === null || $sortBy === '') {
+            return;
+        }
+
+        $direction = strtoupper((string) $sortOrder);
+        if (!in_array($direction, ['ASC', 'DESC'], true)) {
+            $direction = self::SORT_DEFAULT_DIRECTION;
+        }
+
+        switch ((string) $sortBy) {
+            case 'article_number':
+                $collection->setOrder('sku', $direction);
+                break;
+            case 'description':
+                $collection->setOrder('name', $direction);
+                break;
+            case 'brand_dge':
+                $brandAttributeCode = $this->attributeProvider->getBrandAttributeCode();
+                if ($brandAttributeCode && $this->attributeProvider->hasProductAttribute($brandAttributeCode)) {
+                    $collection->setOrder($brandAttributeCode, $direction);
+                }
+                break;
+            case 'price':
+                $collection->getSelect()->order(self::PRICE_INDEX_ALIAS . '.min_price ' . $direction);
+                break;
+            case 'purchase_price':
+                if ($this->attributeProvider->hasProductAttribute(self::COST_ATTRIBUTE_CODE)) {
+                    $collection->setOrder(self::COST_ATTRIBUTE_CODE, $direction);
+                }
+                break;
+            case 'available_stock':
+                $collection->getSelect()->order('qty ' . $direction);
+                break;
+        }
     }
 
     /**

@@ -170,8 +170,16 @@ The following filters are applied implicitly — disabled / hidden / unsupported
 | `article_number` | string | — | Partial match: `LIKE %value%` on SKU |
 | `ean` | string | — | Partial match: `LIKE %value%` on barcode attribute |
 | `stock` | string | — | `1` / `true` / `in_stock` / `in-stock` → in-stock only. `0` / `false` / `out_of_stock` / `out-of-stock` → out-of-stock only. Empty = no filter |
+| `price_from` | float | — | Lower bound on sales price (excl. VAT), inclusive. Compared against `catalog_product_index_price.min_price`, so configurable parents are included by their cheapest variant. Negative values are ignored. |
+| `price_to` | float | — | Upper bound on sales price (excl. VAT), inclusive. Same semantics as `price_from`. |
+| `purchase_price_from` | float | — | Lower bound on the `cost` attribute (excl. VAT), inclusive. Filtered via EAV — configurable parents (which store `cost` only on children) are excluded when set. Negative values are ignored. |
+| `purchase_price_to` | float | — | Upper bound on the `cost` attribute (excl. VAT), inclusive. Same semantics as `purchase_price_from`. |
+| `sort_by` | string | — | One of `article_number`, `description`, `brand_dge`, `price`, `purchase_price`, `available_stock`. Unknown / missing values fall back to default order. `order_number` is **not** sortable in this phase (computed field). `available_stock` sorts on the legacy `cataloginventory_stock_item.qty` column — may differ from the MSI-aware `available_stock` value in the response if your shop's legacy table is out of sync with MSI sources. |
+| `sort_order` | string | `desc` | `asc` or `desc` (case-insensitive). Ignored when `sort_by` is missing or unknown. Any other value falls back to `desc`. |
 | `page` | int | `1` | Min 1 |
 | `per_page` | int | `50` | Min 1, max 200 (clamped) |
+
+**Pagination stability:** results are always tie-broken by `entity_id ASC` as a secondary sort, so paging is deterministic even when many rows share the same `sort_by` value.
 
 ### Response
 
@@ -254,7 +262,7 @@ The following filters are applied implicitly — disabled / hidden / unsupported
 | `purchase_price_excl_vat` | float \| null | Product cost |
 | `purchase_price_incl_vat` | float \| null | `cost × (1 + tax)`, null when cost is null |
 | `shipping_cost` | float \| null | Estimated shipping for the configured destination |
-| `available_stock` | float \| null | Stock qty |
+| `available_stock` | float \| null | Raw physical stock qty (**not** salable qty). When `Magento_InventoryApi` is enabled, this is `SUM(inventory_source_item.quantity)` across all sources where `status=1`. Otherwise it falls back to `cataloginventory_stock_item.qty` (stock_id=1). Reservations are NOT subtracted. |
 
 ### Examples
 
@@ -274,6 +282,22 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 # Search by EAN / article number
 curl -s -H "Authorization: Bearer $TOKEN" \
   "$BASE/rest/V1/tessAi/products?ean=8710103&article_number=ABC"
+
+# Filter by sales-price range (excl. VAT)
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "$BASE/rest/V1/tessAi/products?price_from=10&price_to=100"
+
+# Filter by purchase-price (cost) range
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "$BASE/rest/V1/tessAi/products?purchase_price_from=5&purchase_price_to=50"
+
+# Combine multiple filters + sort
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "$BASE/rest/V1/tessAi/products?supplier_id=10000&brand_id=409&price_from=5&price_to=50&sort_by=article_number&sort_order=desc"
+
+# Sort by sales price ascending (configurable products use their cheapest variant)
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "$BASE/rest/V1/tessAi/products?sort_by=price&sort_order=asc&per_page=5"
 ```
 
 ### Paginate all results

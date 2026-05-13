@@ -55,6 +55,11 @@ class ProductMapper
     private $orderQuantityResolver;
 
     /**
+     * @var StockQtyResolver
+     */
+    private $stockQtyResolver;
+
+    /**
      * @var array<int, Product[]>
      */
     private $configurableChildrenCache = [];
@@ -67,7 +72,8 @@ class ProductMapper
         CatalogHelper $catalogHelper,
         ShippingCostResolver $shippingCostResolver = null,
         DeliveryTimeProviderInterface $deliveryTimeProvider = null,
-        OrderQuantityResolver $orderQuantityResolver = null
+        OrderQuantityResolver $orderQuantityResolver = null,
+        StockQtyResolver $stockQtyResolver = null
     ) {
         $this->productFactory = $productFactory;
         $this->saleUnitFactory = $saleUnitFactory;
@@ -77,6 +83,7 @@ class ProductMapper
         $this->shippingCostResolver = $shippingCostResolver;
         $this->deliveryTimeProvider = $deliveryTimeProvider;
         $this->orderQuantityResolver = $orderQuantityResolver;
+        $this->stockQtyResolver = $stockQtyResolver;
     }
 
     /**
@@ -192,25 +199,38 @@ class ProductMapper
     }
 
     /**
+     * Resolve raw physical stock qty for a product. Routes through
+     * StockQtyResolver, which auto-detects MSI vs legacy storage. Bypasses
+     * `getData('qty')` and StockRegistry so any third-party plugin override
+     * (notably Magento_Inventory plugins) cannot inject synthetic values.
+     *
      * @param Product $catalogProduct
      * @return float|null
      */
     private function resolveStockQty(Product $catalogProduct)
     {
-        if ($catalogProduct->getData('qty') !== null) {
-            return $this->normalizeDecimal($catalogProduct->getData('qty'));
-        }
-
-        try {
-            $stockItem = $this->stockRegistry->getStockItemBySku($catalogProduct->getSku());
-            if ($stockItem) {
-                return $this->normalizeDecimal($stockItem->getQty());
-            }
-        } catch (\Throwable $exception) {
+        $sku = $this->normalizeString($catalogProduct->getSku());
+        if ($sku === null) {
             return null;
         }
 
-        return null;
+        try {
+            return $this->getStockQtyResolver()->getQty($sku);
+        } catch (\Throwable $exception) {
+            return null;
+        }
+    }
+
+    /**
+     * @return StockQtyResolver
+     */
+    private function getStockQtyResolver()
+    {
+        if ($this->stockQtyResolver === null) {
+            $this->stockQtyResolver = ObjectManager::getInstance()->get(StockQtyResolver::class);
+        }
+
+        return $this->stockQtyResolver;
     }
 
     /**

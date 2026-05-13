@@ -18,6 +18,12 @@ interface ProductManagementInterface
      * @param string|null $stock
      * @param int $page
      * @param int $per_page
+     * @param string|null $price_from Lower bound on sales price (excl. VAT), inclusive. Ignored if < 0.
+     * @param string|null $price_to Upper bound on sales price (excl. VAT), inclusive. Ignored if < 0.
+     * @param string|null $purchase_price_from Lower bound on `cost` attribute (excl. VAT), inclusive. Ignored if < 0.
+     * @param string|null $purchase_price_to Upper bound on `cost` attribute (excl. VAT), inclusive. Ignored if < 0.
+     * @param string|null $sort_by One of: article_number, description, brand_dge, price, purchase_price, available_stock.
+     * @param string|null $sort_order asc or desc. Defaults to desc. Ignored if $sort_by is missing or unknown.
      * @return \Combipower\TessAI\Api\Data\ProductListInterface
      */
     public function getList(
@@ -28,7 +34,13 @@ interface ProductManagementInterface
         $ean = null,
         $stock = null,
         $page = 1,
-        $per_page = 50
+        $per_page = 50,
+        $price_from = null,
+        $price_to = null,
+        $purchase_price_from = null,
+        $purchase_price_to = null,
+        $sort_by = null,
+        $sort_order = null
     );
 
     /**
