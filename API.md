@@ -126,7 +126,7 @@ Returns available options for the three main filters used by `/products`.
 {
   "suppliers":       [ { "id": "12",       "name": "Acme NL" } ],
   "brands":          [ { "id": "5",        "name": "BOSCH"  } ],
-  "article_numbers": [ { "id": "SKU-001",  "name": "SKU-001" } ]
+  "skus":            [ { "id": "SKU-001",  "name": "SKU-001" } ]
 }
 ```
 
@@ -134,7 +134,7 @@ Returns available options for the three main filters used by `/products`.
 |---|---|---|
 | `suppliers` | Options of the configured supplier attribute | `id` = option_id (or text value if attribute is text) |
 | `brands` | Options of the configured brand attribute | Same as above |
-| `article_numbers` | All SKUs in the catalog | `id` = `name` = SKU |
+| `skus` | All SKUs in the catalog | `id` = `name` = SKU |
 
 ### Example
 
@@ -167,17 +167,31 @@ The following filters are applied implicitly — disabled / hidden / unsupported
 | `category_id` | int / CSV / array | — | One ID, comma-list `1,2,3`, or repeated `category_id[]=1&category_id[]=2`. Filters via `category_product` table |
 | `supplier_id` | string | — | Exact match on the supplier attribute value |
 | `brand_id` | string | — | Exact match on the brand attribute value |
-| `article_number` | string | — | Partial match: `LIKE %value%` on SKU |
+| `sku` | string / string[] | — | Partial match: `LIKE %value%` on SKU. Multi-value → OR of LIKEs. |
 | `ean` | string | — | Partial match: `LIKE %value%` on barcode attribute |
-| `stock` | string | — | `1` / `true` / `in_stock` / `in-stock` → in-stock only. `0` / `false` / `out_of_stock` / `out-of-stock` → out-of-stock only. Empty = no filter |
+| `stock` | string | — | `1` / `true` / `in_stock` / `in-stock` → in-stock only. `0` / `false` / `out_of_stock` / `out-of-stock` → out-of-stock only. Empty = no filter. Reads `cataloginventory_stock_item.is_in_stock` (legacy default-stock column) — on MSI shops the filter may admit/reject rows that the MSI-aware `available_stock` value in the response would not agree with, if the legacy table is out of sync. |
 | `price_from` | float | — | Lower bound on sales price (excl. VAT), inclusive. Compared against `catalog_product_index_price.min_price`, so configurable parents are included by their cheapest variant. Negative values are ignored. |
 | `price_to` | float | — | Upper bound on sales price (excl. VAT), inclusive. Same semantics as `price_from`. |
 | `purchase_price_from` | float | — | Lower bound on the `cost` attribute (excl. VAT), inclusive. Filtered via EAV — configurable parents (which store `cost` only on children) are excluded when set. Negative values are ignored. |
 | `purchase_price_to` | float | — | Upper bound on the `cost` attribute (excl. VAT), inclusive. Same semantics as `purchase_price_from`. |
-| `sort_by` | string | — | One of `article_number`, `description`, `brand_dge`, `price`, `purchase_price`, `available_stock`. Unknown / missing values fall back to default order. `order_number` is **not** sortable in this phase (computed field). `available_stock` sorts on the legacy `cataloginventory_stock_item.qty` column — may differ from the MSI-aware `available_stock` value in the response if your shop's legacy table is out of sync with MSI sources. |
+| `sort_by` | string | — | One of `sku`, `name`, `brand`, `price`, `purchase_price`, `available_stock`. Unknown / missing values fall back to default order. `order_number` is **not** sortable in this phase (computed field). `available_stock` sorts on the legacy `cataloginventory_stock_item.qty` column — may differ from the MSI-aware `available_stock` value in the response if your shop's legacy table is out of sync with MSI sources. |
 | `sort_order` | string | `desc` | `asc` or `desc` (case-insensitive). Ignored when `sort_by` is missing or unknown. Any other value falls back to `desc`. |
 | `page` | int | `1` | Min 1 |
 | `per_page` | int | `50` | Min 1, max 200 (clamped) |
+| `attr[code]` | string / string[] | — | Filter by any extra attribute configured in Admin → Combipower → TESS AI → Additional Attributes. Operator is auto-selected: `varchar` / `text` → `LIKE %v%`, all other backends and source-using attributes (select/multiselect) → exact match. Codes not in the Additional Attributes list are ignored. |
+
+**Multi-value filters.** `supplier_id`, `brand_id`, `sku`, `ean`, and every `attr[code]` accept either a single scalar or a repeated/array syntax. Multiple values are OR-joined (exact attributes → SQL `IN`; LIKE attributes → `OR LIKE`). Single-value syntax stays backwards-compatible.
+
+```
+# single
+?supplier_id=10
+?attr[color]=red
+
+# multi (OR)
+?supplier_id[]=10&supplier_id[]=11
+?ean[]=871&ean[]=872
+?attr[color][]=red&attr[color][]=blue
+```
 
 **Pagination stability:** results are always tie-broken by `entity_id ASC` as a secondary sort, so paging is deterministic even when many rows share the same `sort_by` value.
 
@@ -193,13 +207,14 @@ The following filters are applied implicitly — disabled / hidden / unsupported
   "items": [
     {
       "id": "67250",
-      "article_number": "10116",
+      "sku": "10116",
       "barcode": "8720174265884",
       "ean": "8720174265884",
       "manufacturer_number": "500.600.30.002",
-      "description": "D4E LEDEREN RIEM 50MM IN OLIEBRUIN TOPNERFLEER",
-      "brand_dge": "D4E",
-      "article_group": null,
+      "supplier": "Acme NL",
+      "unit": "stuks",
+      "name": "D4E LEDEREN RIEM 50MM IN OLIEBRUIN TOPNERFLEER",
+      "brand": "D4E",
       "delivery_time": "1-2 days",
       "product_type": "configurable",
       "price": [23.16],
@@ -218,9 +233,16 @@ The following filters are applied implicitly — disabled / hidden / unsupported
           "purchase_price": 18.0,
           "purchase_price_excl_vat": 18.0,
           "purchase_price_incl_vat": 21.78,
-          "shipping_cost": 4.95,
+          "shipping_cost": 5.99,
+          "shipping_cost_excl_vat": 4.95,
+          "shipping_cost_incl_vat": 5.99,
           "available_stock": 1
         }
+      ],
+      "additional_attributes": [
+        { "code": "color",    "value": "Black"   },
+        { "code": "material", "value": "Leather" },
+        { "code": "weight",   "value": "0.450"   }
       ]
     }
   ]
@@ -232,13 +254,14 @@ The following filters are applied implicitly — disabled / hidden / unsupported
 | Field | Type | Description |
 |---|---|---|
 | `id` | string | Product entity_id |
-| `article_number` | string | SKU |
+| `sku` | string | SKU |
 | `barcode` | string \| null | Barcode attribute |
 | `ean` | string \| null | Alias of `barcode` |
 | `manufacturer_number` | string \| null | Manufacturer/supplier product number |
-| `description` | string \| null | Product name (HTML stripped) |
-| `brand_dge` | string \| null | Brand attribute value |
-| `article_group` | null | Reserved (always null for now) |
+| `supplier` | string \| null | Value of the configured supplier attribute (Admin → Attribute Mapping) |
+| `unit` | string \| null | Raw value of the configured unit attribute. Same value is used to build `sale_units[].label`. |
+| `name` | string \| null | Product name (HTML stripped) |
+| `brand` | string \| null | Brand attribute value |
 | `delivery_time` | string \| null | Delivery time label |
 | `product_type` | string | `simple`, `configurable`, ... |
 | `price` | float[] | Simple: 1 element. Configurable: distinct child prices, ascending |
@@ -246,6 +269,7 @@ The following filters are applied implicitly — disabled / hidden / unsupported
 | `order_number` | float | Total ordered qty across non-canceled orders (`qty_ordered − qty_canceled − qty_refunded`) |
 | `category_id` | string \| null | Matches the requested `category_id`, otherwise the product's first category |
 | `sale_units` | array | See below |
+| `additional_attributes` | array | List of `{code, value}` pairs for extra attributes configured in Admin → Combipower → TESS AI → Additional Attributes. Values are string-cast (numbers / multi-select labels rendered as strings) for stable JSON marshalling. Empty array `[]` when nothing is configured or all values are blank. |
 
 ### SaleUnit fields
 
@@ -261,7 +285,9 @@ The following filters are applied implicitly — disabled / hidden / unsupported
 | `purchase_price` | float \| null | Cost (legacy alias of `purchase_price_excl_vat`) |
 | `purchase_price_excl_vat` | float \| null | Product cost |
 | `purchase_price_incl_vat` | float \| null | `cost × (1 + tax)`, null when cost is null |
-| `shipping_cost` | float \| null | Estimated shipping for the configured destination |
+| `shipping_cost` | float \| null | **Legacy alias** of `shipping_cost_incl_vat`. Always returns the tax-inclusive value regardless of `Stores → Tax → Calculation Settings → Shipping Prices` config. |
+| `shipping_cost_excl_vat` | float \| null | Estimated shipping for the configured destination, **excluding** VAT. Computed via `TaxHelper::getShippingPrice` against the configured shipping tax class. |
+| `shipping_cost_incl_vat` | float \| null | Estimated shipping for the configured destination, **including** VAT. |
 | `available_stock` | float \| null | Raw physical stock qty (**not** salable qty). When `Magento_InventoryApi` is enabled, this is `SUM(inventory_source_item.quantity)` across all sources where `status=1`. Otherwise it falls back to `cataloginventory_stock_item.qty` (stock_id=1). Reservations are NOT subtracted. |
 
 ### Examples
@@ -281,7 +307,7 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 
 # Search by EAN / article number
 curl -s -H "Authorization: Bearer $TOKEN" \
-  "$BASE/rest/V1/tessAi/products?ean=8710103&article_number=ABC"
+  "$BASE/rest/V1/tessAi/products?ean=8710103&sku=ABC"
 
 # Filter by sales-price range (excl. VAT)
 curl -s -H "Authorization: Bearer $TOKEN" \
@@ -293,11 +319,23 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 
 # Combine multiple filters + sort
 curl -s -H "Authorization: Bearer $TOKEN" \
-  "$BASE/rest/V1/tessAi/products?supplier_id=10000&brand_id=409&price_from=5&price_to=50&sort_by=article_number&sort_order=desc"
+  "$BASE/rest/V1/tessAi/products?supplier_id=10000&brand_id=409&price_from=5&price_to=50&sort_by=sku&sort_order=desc"
 
 # Sort by sales price ascending (configurable products use their cheapest variant)
 curl -s -H "Authorization: Bearer $TOKEN" \
   "$BASE/rest/V1/tessAi/products?sort_by=price&sort_order=asc&per_page=5"
+
+# Multi-value filters on built-in fields (OR)
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "$BASE/rest/V1/tessAi/products?supplier_id%5B%5D=10&supplier_id%5B%5D=11"
+
+# Filter by an extra (additional) attribute
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "$BASE/rest/V1/tessAi/products?attr%5Bcolor%5D=red&attr%5Bmaterial%5D=steel"
+
+# Multi-value on additional attribute (OR)
+curl -s -H "Authorization: Bearer $TOKEN" \
+  "$BASE/rest/V1/tessAi/products?attr%5Bcolor%5D%5B%5D=red&attr%5Bcolor%5D%5B%5D=blue"
 ```
 
 ### Paginate all results
@@ -335,7 +373,7 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 ```json
 {
   "id": "67250",
-  "article_number": "10116",
+  "sku": "10116",
   "barcode": "8720174265884",
   "...": "...",
   "sale_units": [ /* ... */ ]

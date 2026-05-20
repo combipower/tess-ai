@@ -14,6 +14,8 @@ interface SaleUnitInterface
     public const PURCHASE_PRICE_EXCL_VAT = 'purchase_price_excl_vat';
     public const PURCHASE_PRICE_INCL_VAT = 'purchase_price_incl_vat';
     public const SHIPPING_COST = 'shipping_cost';
+    public const SHIPPING_COST_EXCL_VAT = 'shipping_cost_excl_vat';
+    public const SHIPPING_COST_INCL_VAT = 'shipping_cost_incl_vat';
     public const AVAILABLE_STOCK = 'available_stock';
 
     /**
@@ -67,9 +69,22 @@ interface SaleUnitInterface
     public function getPurchasePriceInclVat();
 
     /**
+     * Legacy alias of `getShippingCostInclVat()`. Kept for BC; new clients
+     * should read the explicit excl/incl fields below.
+     *
      * @return float|null
      */
     public function getShippingCost();
+
+    /**
+     * @return float|null
+     */
+    public function getShippingCostExclVat();
+
+    /**
+     * @return float|null
+     */
+    public function getShippingCostInclVat();
 
     /**
      * @return float|null
@@ -143,9 +158,20 @@ interface SaleUnitInterface
     public function setShippingCost($cost);
 
     /**
+     * @param float|null $cost
+     * @return \Combipower\TessAI\Api\Data\SaleUnitInterface
+     */
+    public function setShippingCostExclVat($cost);
+
+    /**
+     * @param float|null $cost
+     * @return \Combipower\TessAI\Api\Data\SaleUnitInterface
+     */
+    public function setShippingCostInclVat($cost);
+
+    /**
      * @param float|null $stock
      * @return \Combipower\TessAI\Api\Data\SaleUnitInterface
      */
     public function setAvailableStock($stock);
-
 }

@@ -40,12 +40,12 @@ class FilterManagement implements FilterManagementInterface
         $brands = $this->buildOptions(
             $this->attributeProvider->getAttributeOptions($this->attributeProvider->getBrandAttributeCode())
         );
-        $articleNumbers = $this->buildOptions($this->attributeProvider->getSkuOptions());
+        $skus = $this->buildOptions($this->attributeProvider->getSkuOptions());
 
         return $this->filterOptionsFactory->create()
             ->setSuppliers($suppliers)
             ->setBrands($brands)
-            ->setArticleNumbers($articleNumbers);
+            ->setSkus($skus);
     }
 
     /**

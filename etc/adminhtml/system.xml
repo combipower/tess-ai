@@ -14,29 +14,45 @@
             <group id="attribute_mapping" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Attribute Mapping</label>
 
-                <field id="supplier_attribute" translate="label comment" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Supplier Attribute Code</label>
+                <field id="supplier_attribute" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Supplier Code</label>
+                    <source_model>Combipower\TessAI\Model\Config\Source\ProductAttribute</source_model>
                     <comment>Product attribute code used for supplier filter.</comment>
                 </field>
 
-                <field id="brand_attribute" translate="label comment" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Brand Attribute Code</label>
-                    <comment>Product attribute code mapped to brand_dge and brand filter.</comment>
+                <field id="brand_attribute" translate="label comment" type="select" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Brand</label>
+                    <source_model>Combipower\TessAI\Model\Config\Source\ProductAttribute</source_model>
+                    <comment>Product attribute code mapped to API response field `brand` and to the `brand_id` query filter.</comment>
                 </field>
 
-                <field id="barcode_attribute" translate="label comment" type="text" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Barcode Attribute Code</label>
+                <field id="barcode_attribute" translate="label comment" type="select" sortOrder="30" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Barcode</label>
+                    <source_model>Combipower\TessAI\Model\Config\Source\ProductAttribute</source_model>
                     <comment>Product attribute code mapped to API field barcode and ean query filter.</comment>
                 </field>
 
-                <field id="manufacturer_number_attribute" translate="label comment" type="text" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Manufacturer Number Attribute Code</label>
+                <field id="manufacturer_number_attribute" translate="label comment" type="select" sortOrder="40" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Manufacturer Number</label>
+                    <source_model>Combipower\TessAI\Model\Config\Source\ProductAttribute</source_model>
                     <comment>Product attribute code mapped to manufacturer_number.</comment>
                 </field>
 
-                <field id="unit_attribute" translate="label comment" type="text" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Unit Attribute Code</label>
+                <field id="unit_attribute" translate="label comment" type="select" sortOrder="50" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Sale Unit</label>
+                    <source_model>Combipower\TessAI\Model\Config\Source\ProductAttribute</source_model>
                     <comment>Product attribute code used to render sale unit label.</comment>
+                </field>
+            </group>
+
+            <group id="additional_attributes" translate="label" type="text" sortOrder="15" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Additional Attributes</label>
+
+                <field id="mappings" translate="label comment" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Extra Attributes</label>
+                    <frontend_model>Combipower\TessAI\Block\Adminhtml\Form\Field\AdditionalAttributes</frontend_model>
+                    <backend_model>Magento\Config\Model\Config\Backend\Serialized\ArraySerialized</backend_model>
+                    <comment><![CDATA[Pick extra product attributes to expose in the API response under <code>additional_attributes</code>. Each selected attribute also becomes filterable via <code>?attr[code]=value</code> (or <code>?attr[code][]=v1&amp;attr[code][]=v2</code> for multi-value).]]></comment>
                 </field>
             </group>
 
@@ -74,9 +90,10 @@
                     <comment>Street used by shipping rules when required by carriers.</comment>
                 </field>
 
-                <field id="shipping_method" translate="label comment" type="text" sortOrder="70" showInDefault="1" showInWebsite="1" showInStore="1">
-                    <label>Shipping Method Code</label>
-                    <comment>Optional carrier_method code, for example flatrate_flatrate. Leave empty to use the cheapest available rate.</comment>
+                <field id="shipping_method" translate="label comment" type="select" sortOrder="70" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Shipping Method</label>
+                    <source_model>Combipower\TessAI\Model\Config\Source\ShippingMethod</source_model>
+                    <comment>Pick a specific shipping method to lock the `shipping_cost` value to that rate. Leave on "Use cheapest available rate" to let the API pick the lowest among all carriers.</comment>
                 </field>
             </group>
 

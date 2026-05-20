@@ -10,6 +10,9 @@
                 <manufacturer_number_attribute>supplier_product_id</manufacturer_number_attribute>
                 <unit_attribute>sale_unit</unit_attribute>
             </attribute_mapping>
+            <additional_attributes>
+                <mappings/>
+            </additional_attributes>
             <shipping_estimate>
                 <country_id>NL</country_id>
                 <postcode>1011AC</postcode>

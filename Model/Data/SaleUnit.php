@@ -61,6 +61,16 @@ class SaleUnit extends AbstractSimpleObject implements SaleUnitInterface
         return $this->_get(self::SHIPPING_COST);
     }
 
+    public function getShippingCostExclVat()
+    {
+        return $this->_get(self::SHIPPING_COST_EXCL_VAT);
+    }
+
+    public function getShippingCostInclVat()
+    {
+        return $this->_get(self::SHIPPING_COST_INCL_VAT);
+    }
+
     public function getAvailableStock()
     {
         return $this->_get(self::AVAILABLE_STOCK);
@@ -119,6 +129,16 @@ class SaleUnit extends AbstractSimpleObject implements SaleUnitInterface
     public function setShippingCost($cost)
     {
         return $this->setData(self::SHIPPING_COST, $cost);
+    }
+
+    public function setShippingCostExclVat($cost)
+    {
+        return $this->setData(self::SHIPPING_COST_EXCL_VAT, $cost);
+    }
+
+    public function setShippingCostInclVat($cost)
+    {
+        return $this->setData(self::SHIPPING_COST_INCL_VAT, $cost);
     }
 
     public function setAvailableStock($stock)

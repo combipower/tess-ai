@@ -11,6 +11,7 @@
     <preference for="Combipower\TessAI\Api\Data\FilterOptionsInterface" type="Combipower\TessAI\Model\Data\FilterOptions" />
     <preference for="Combipower\TessAI\Api\Data\PaginationMetaInterface" type="Combipower\TessAI\Model\Data\PaginationMeta" />
     <preference for="Combipower\TessAI\Api\Data\SaleUnitInterface" type="Combipower\TessAI\Model\Data\SaleUnit" />
+    <preference for="Combipower\TessAI\Api\Data\AdditionalAttributeInterface" type="Combipower\TessAI\Model\Data\AdditionalAttribute" />
     <preference for="Combipower\TessAI\Api\Data\ProductInterface" type="Combipower\TessAI\Model\Data\Product" />
     <preference for="Combipower\TessAI\Api\Data\ProductListInterface" type="Combipower\TessAI\Model\Data\ProductList" />
 </config>

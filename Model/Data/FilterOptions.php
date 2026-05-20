@@ -16,9 +16,9 @@ class FilterOptions extends AbstractSimpleObject implements FilterOptionsInterfa
         return $this->_get(self::BRANDS);
     }
 
-    public function getArticleNumbers()
+    public function getSkus()
     {
-        return $this->_get(self::ARTICLE_NUMBERS);
+        return $this->_get(self::SKUS);
     }
 
     public function setSuppliers(array $suppliers)
@@ -31,8 +31,8 @@ class FilterOptions extends AbstractSimpleObject implements FilterOptionsInterfa
         return $this->setData(self::BRANDS, $brands);
     }
 
-    public function setArticleNumbers(array $articleNumbers)
+    public function setSkus(array $skus)
     {
-        return $this->setData(self::ARTICLE_NUMBERS, $articleNumbers);
+        return $this->setData(self::SKUS, $skus);
     }
 }

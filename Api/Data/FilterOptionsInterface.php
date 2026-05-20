@@ -5,7 +5,7 @@ interface FilterOptionsInterface
 {
     const SUPPLIERS = 'suppliers';
     const BRANDS = 'brands';
-    const ARTICLE_NUMBERS = 'article_numbers';
+    const SKUS = 'skus';
 
     /**
      * @return \Combipower\TessAI\Api\Data\OptionInterface[]|null
@@ -20,7 +20,7 @@ interface FilterOptionsInterface
     /**
      * @return \Combipower\TessAI\Api\Data\OptionInterface[]|null
      */
-    public function getArticleNumbers();
+    public function getSkus();
 
     /**
      * @param \Combipower\TessAI\Api\Data\OptionInterface[] $suppliers
@@ -35,9 +35,8 @@ interface FilterOptionsInterface
     public function setBrands(array $brands);
 
     /**
-     * @param \Combipower\TessAI\Api\Data\OptionInterface[] $articleNumbers
+     * @param \Combipower\TessAI\Api\Data\OptionInterface[] $skus
      * @return \Combipower\TessAI\Api\Data\FilterOptionsInterface
      */
-    public function setArticleNumbers(array $articleNumbers);
-
+    public function setSkus(array $skus);
 }

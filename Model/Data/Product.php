@@ -11,9 +11,9 @@ class Product extends AbstractSimpleObject implements ProductInterface
         return $this->_get(self::ID);
     }
 
-    public function getArticleNumber()
+    public function getSku()
     {
-        return $this->_get(self::ARTICLE_NUMBER);
+        return $this->_get(self::SKU);
     }
 
     public function getBarcode()
@@ -31,19 +31,24 @@ class Product extends AbstractSimpleObject implements ProductInterface
         return $this->_get(self::MANUFACTURER_NUMBER);
     }
 
-    public function getDescription()
+    public function getSupplier()
     {
-        return $this->_get(self::DESCRIPTION);
+        return $this->_get(self::SUPPLIER);
     }
 
-    public function getBrandDge()
+    public function getUnit()
     {
-        return $this->_get(self::BRAND_DGE);
+        return $this->_get(self::UNIT);
     }
 
-    public function getArticleGroup()
+    public function getName()
     {
-        return $this->_get(self::ARTICLE_GROUP);
+        return $this->_get(self::NAME);
+    }
+
+    public function getBrand()
+    {
+        return $this->_get(self::BRAND);
     }
 
     public function getDeliveryTime()
@@ -81,14 +86,19 @@ class Product extends AbstractSimpleObject implements ProductInterface
         return $this->_get(self::SALE_UNITS);
     }
 
+    public function getAdditionalAttributes()
+    {
+        return $this->_get(self::ADDITIONAL_ATTRIBUTES);
+    }
+
     public function setId($id)
     {
         return $this->setData(self::ID, $id);
     }
 
-    public function setArticleNumber($articleNumber)
+    public function setSku($sku)
     {
-        return $this->setData(self::ARTICLE_NUMBER, $articleNumber);
+        return $this->setData(self::SKU, $sku);
     }
 
     public function setBarcode($barcode)
@@ -106,19 +116,24 @@ class Product extends AbstractSimpleObject implements ProductInterface
         return $this->setData(self::MANUFACTURER_NUMBER, $manufacturerNumber);
     }
 
-    public function setDescription($description)
+    public function setSupplier($supplier)
     {
-        return $this->setData(self::DESCRIPTION, $description);
+        return $this->setData(self::SUPPLIER, $supplier);
     }
 
-    public function setBrandDge($brandDge)
+    public function setUnit($unit)
     {
-        return $this->setData(self::BRAND_DGE, $brandDge);
+        return $this->setData(self::UNIT, $unit);
     }
 
-    public function setArticleGroup($articleGroup)
+    public function setName($name)
     {
-        return $this->setData(self::ARTICLE_GROUP, $articleGroup);
+        return $this->setData(self::NAME, $name);
+    }
+
+    public function setBrand($brand)
+    {
+        return $this->setData(self::BRAND, $brand);
     }
 
     public function setDeliveryTime($deliveryTime)
@@ -154,5 +169,10 @@ class Product extends AbstractSimpleObject implements ProductInterface
     public function setSaleUnits(array $saleUnits)
     {
         return $this->setData(self::SALE_UNITS, $saleUnits);
+    }
+
+    public function setAdditionalAttributes(array $additionalAttributes)
+    {
+        return $this->setData(self::ADDITIONAL_ATTRIBUTES, $additionalAttributes);
     }
 }

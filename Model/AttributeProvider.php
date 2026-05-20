@@ -4,7 +4,9 @@ namespace Combipower\TessAI\Model;
 use Magento\Catalog\Model\Product as CatalogProduct;
 use Magento\Eav\Model\Config as EavConfig;
 use Magento\Framework\App\ResourceConnection;
+use Combipower\TessAI\Api\Data\AdditionalAttributeInterface;
 use Combipower\TessAI\Model\Config\AttributeMapping;
+use Combipower\TessAI\Model\Data\AdditionalAttributeFactory;
 
 class AttributeProvider
 {
@@ -23,14 +25,21 @@ class AttributeProvider
      */
     private $attributeMapping;
 
+    /**
+     * @var AdditionalAttributeFactory
+     */
+    private $additionalAttributeFactory;
+
     public function __construct(
         EavConfig $eavConfig,
         ResourceConnection $resourceConnection,
-        AttributeMapping $attributeMapping
+        AttributeMapping $attributeMapping,
+        AdditionalAttributeFactory $additionalAttributeFactory
     ) {
         $this->eavConfig = $eavConfig;
         $this->resourceConnection = $resourceConnection;
         $this->attributeMapping = $attributeMapping;
+        $this->additionalAttributeFactory = $additionalAttributeFactory;
     }
 
     /**
@@ -71,6 +80,88 @@ class AttributeProvider
     public function getUnitAttributeCode()
     {
         return $this->attributeMapping->getUnitAttributeCode();
+    }
+
+    /**
+     * @return string[]
+     */
+    public function getAdditionalAttributeCodes()
+    {
+        $codes = $this->attributeMapping->getAdditionalAttributeCodes();
+
+        $result = [];
+        foreach ($codes as $code) {
+            if ($this->hasProductAttribute($code)) {
+                $result[] = $code;
+            }
+        }
+
+        return $result;
+    }
+
+    /**
+     * Decide which collection filter operator suits an attribute.
+     *
+     * Numeric (int/decimal) and source-using attributes (select/multiselect)
+     * → exact match.
+     * Text-ish (varchar/text) → LIKE '%value%' for partial search.
+     *
+     * @param string $attributeCode
+     * @return string 'exact' or 'like'
+     */
+    public function resolveAttributeOperator($attributeCode)
+    {
+        if (!$this->hasProductAttribute($attributeCode)) {
+            return 'exact';
+        }
+
+        $attribute = $this->eavConfig->getAttribute(CatalogProduct::ENTITY, $attributeCode);
+        if ($attribute->usesSource()) {
+            return 'exact';
+        }
+
+        $backendType = (string) $attribute->getBackendType();
+        if (in_array($backendType, ['int', 'decimal'], true)) {
+            return 'exact';
+        }
+
+        return 'like';
+    }
+
+    /**
+     * Build {code, value} DTOs for the configured additional attributes.
+     *
+     * Wrapping as objects (instead of an associative array) is required so
+     * Magento's webapi marshaller preserves the attribute code in JSON; a
+     * map declared as `string[]` would be re-indexed and the codes lost.
+     *
+     * @param CatalogProduct $product
+     * @return AdditionalAttributeInterface[]
+     */
+    public function buildAdditionalAttributes(CatalogProduct $product)
+    {
+        $result = [];
+        foreach ($this->getAdditionalAttributeCodes() as $code) {
+            $raw = $this->getProductAttributeValue($product, $code);
+            if ($raw === null || $raw === '' || $raw === false) {
+                continue;
+            }
+
+            if (is_array($raw)) {
+                $raw = implode(', ', array_filter(array_map('strval', $raw), static function ($v) {
+                    return $v !== '';
+                }));
+                if ($raw === '') {
+                    continue;
+                }
+            }
+
+            $result[] = $this->additionalAttributeFactory->create()
+                ->setCode($code)
+                ->setValue((string) $raw);
+        }
+
+        return $result;
     }
 
     /**

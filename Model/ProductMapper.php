@@ -4,7 +4,7 @@ namespace Combipower\TessAI\Model;
 use Magento\Catalog\Helper\Data as CatalogHelper;
 use Magento\Catalog\Model\Product;
 use Magento\CatalogInventory\Api\StockRegistryInterface;
-use Magento\Framework\App\ObjectManager;
+use Magento\Tax\Helper\Data as TaxHelper;
 use Combipower\TessAI\Api\Data\ProductInterface;
 use Combipower\TessAI\Api\DeliveryTimeProviderInterface;
 use Combipower\TessAI\Model\Data\ProductFactory;
@@ -40,6 +40,11 @@ class ProductMapper
     private $catalogHelper;
 
     /**
+     * @var TaxHelper
+     */
+    private $taxHelper;
+
+    /**
      * @var ShippingCostResolver
      */
     private $shippingCostResolver;
@@ -70,16 +75,18 @@ class ProductMapper
         StockRegistryInterface $stockRegistry,
         AttributeProvider $attributeProvider,
         CatalogHelper $catalogHelper,
-        ShippingCostResolver $shippingCostResolver = null,
-        DeliveryTimeProviderInterface $deliveryTimeProvider = null,
-        OrderQuantityResolver $orderQuantityResolver = null,
-        StockQtyResolver $stockQtyResolver = null
+        TaxHelper $taxHelper,
+        ShippingCostResolver $shippingCostResolver,
+        DeliveryTimeProviderInterface $deliveryTimeProvider,
+        OrderQuantityResolver $orderQuantityResolver,
+        StockQtyResolver $stockQtyResolver
     ) {
         $this->productFactory = $productFactory;
         $this->saleUnitFactory = $saleUnitFactory;
         $this->stockRegistry = $stockRegistry;
         $this->attributeProvider = $attributeProvider;
         $this->catalogHelper = $catalogHelper;
+        $this->taxHelper = $taxHelper;
         $this->shippingCostResolver = $shippingCostResolver;
         $this->deliveryTimeProvider = $deliveryTimeProvider;
         $this->orderQuantityResolver = $orderQuantityResolver;
@@ -98,6 +105,7 @@ class ProductMapper
         $barcodeAttributeCode = $this->attributeProvider->getBarcodeAttributeCode();
         $manufacturerNumberAttributeCode = $this->attributeProvider->getManufacturerNumberAttributeCode();
         $brandAttributeCode = $this->attributeProvider->getBrandAttributeCode();
+        $supplierAttributeCode = $this->attributeProvider->getSupplierAttributeCode();
         $unitAttributeCode = $this->attributeProvider->getUnitAttributeCode();
         $unitLabel = $this->attributeProvider->getProductAttributeValue($catalogProduct, $unitAttributeCode);
         $currencyCode = $this->resolveCurrencyCode($catalogProduct);
@@ -118,6 +126,7 @@ class ProductMapper
                 $unitId = $this->formatUnitAmount($unitAmount);
                 $unitPriceExclVat = $tierPriceRow['price'];
                 $purchasePrice = $this->normalizeDecimal($catalogProduct->getCost());
+                $shipping = $this->resolveShippingCostBundle($catalogProduct, $unitAmount);
                 $saleUnits[] = $this->saleUnitFactory->create()
                     ->setId($unitId)
                     ->setSaleId($unitId)
@@ -133,7 +142,9 @@ class ProductMapper
                     ->setPurchasePriceInclVat(
                         $this->applyTaxToPrice($catalogProduct, $purchasePrice)
                     )
-                    ->setShippingCost($this->getShippingCostResolver()->resolve($catalogProduct, $unitAmount))
+                    ->setShippingCost($shipping['incl_vat'])
+                    ->setShippingCostExclVat($shipping['excl_vat'])
+                    ->setShippingCostInclVat($shipping['incl_vat'])
                     ->setAvailableStock($stockQty);
             }
         }
@@ -144,7 +155,7 @@ class ProductMapper
 
         return $this->productFactory->create()
             ->setId((string) $catalogProduct->getId())
-            ->setArticleNumber((string) $catalogProduct->getSku())
+            ->setSku((string) $catalogProduct->getSku())
             ->setBarcode($barcodeValue)
             ->setEan($barcodeValue)
             ->setManufacturerNumber(
@@ -155,13 +166,18 @@ class ProductMapper
                     )
                 )
             )
-            ->setDescription($this->resolveDescription($catalogProduct))
-            ->setBrandDge(
+            ->setSupplier(
+                $this->normalizeString(
+                    $this->attributeProvider->getProductAttributeValue($catalogProduct, $supplierAttributeCode)
+                )
+            )
+            ->setUnit($this->normalizeString($unitLabel))
+            ->setName($this->resolveName($catalogProduct))
+            ->setBrand(
                 $this->normalizeString(
                     $this->attributeProvider->getProductAttributeValue($catalogProduct, $brandAttributeCode)
                 )
             )
-            ->setArticleGroup(null)
             ->setDeliveryTime(
                 $this->resolveDeliveryTime($catalogProduct)
             )
@@ -170,7 +186,10 @@ class ProductMapper
             ->setSpecialPrice($this->normalizeDecimal($catalogProduct->getSpecialPrice()))
             ->setOrderNumber($this->resolveOrderQuantity($catalogProduct))
             ->setCategoryId($categoryId)
-            ->setSaleUnits($saleUnits);
+            ->setSaleUnits($saleUnits)
+            ->setAdditionalAttributes(
+                $this->attributeProvider->buildAdditionalAttributes($catalogProduct)
+            );
     }
 
     /**
@@ -180,22 +199,10 @@ class ProductMapper
     private function resolveOrderQuantity(Product $catalogProduct)
     {
         try {
-            return $this->getOrderQuantityResolver()->resolve((int) $catalogProduct->getId());
+            return $this->orderQuantityResolver->resolve((int) $catalogProduct->getId());
         } catch (\Throwable $exception) {
             return 0.0;
         }
-    }
-
-    /**
-     * @return OrderQuantityResolver
-     */
-    private function getOrderQuantityResolver()
-    {
-        if ($this->orderQuantityResolver === null) {
-            $this->orderQuantityResolver = ObjectManager::getInstance()->get(OrderQuantityResolver::class);
-        }
-
-        return $this->orderQuantityResolver;
     }
 
     /**
@@ -215,22 +222,10 @@ class ProductMapper
         }
 
         try {
-            return $this->getStockQtyResolver()->getQty($sku);
+            return $this->stockQtyResolver->getQty($sku);
         } catch (\Throwable $exception) {
             return null;
         }
-    }
-
-    /**
-     * @return StockQtyResolver
-     */
-    private function getStockQtyResolver()
-    {
-        if ($this->stockQtyResolver === null) {
-            $this->stockQtyResolver = ObjectManager::getInstance()->get(StockQtyResolver::class);
-        }
-
-        return $this->stockQtyResolver;
     }
 
     /**
@@ -493,6 +488,7 @@ class ProductMapper
 
             $purchasePrice = $this->normalizeDecimal($childProduct->getCost());
             $unitPriceExclVat = $this->normalizeDecimal($childProduct->getPrice());
+            $shipping = $this->resolveShippingCostBundle($childProduct, 1.0);
             $saleUnits[] = $this->saleUnitFactory->create()
                 ->setId($childSku)
                 ->setSaleId($childSku)
@@ -504,7 +500,9 @@ class ProductMapper
                 ->setPurchasePrice($purchasePrice)
                 ->setPurchasePriceExclVat($purchasePrice)
                 ->setPurchasePriceInclVat($this->applyTaxToPrice($childProduct, $purchasePrice))
-                ->setShippingCost($this->getShippingCostResolver()->resolve($childProduct))
+                ->setShippingCost($shipping['incl_vat'])
+                ->setShippingCostExclVat($shipping['excl_vat'])
+                ->setShippingCostInclVat($shipping['incl_vat'])
                 ->setAvailableStock($this->resolveStockQty($childProduct));
         }
 
@@ -512,15 +510,40 @@ class ProductMapper
     }
 
     /**
-     * @return ShippingCostResolver
+     * Resolve shipping cost and split it into excl/incl VAT.
+     *
+     * `ShippingCostResolver` returns the raw `$rate->getPrice()` value which
+     * may be tax-inclusive or tax-exclusive depending on
+     * `Stores > Tax > Calculation > Shipping Prices`. `TaxHelper::getShippingPrice`
+     * normalizes that base value against the configured shipping tax class and
+     * store flag, so this method always returns both halves consistently.
+     *
+     * @param Product $product
+     * @param float $qty
+     * @return array{excl_vat: float|null, incl_vat: float|null}
      */
-    private function getShippingCostResolver()
+    private function resolveShippingCostBundle(Product $product, $qty)
     {
-        if ($this->shippingCostResolver === null) {
-            $this->shippingCostResolver = ObjectManager::getInstance()->get(ShippingCostResolver::class);
+        $raw = $this->shippingCostResolver->resolve($product, $qty);
+        if ($raw === null) {
+            return ['excl_vat' => null, 'incl_vat' => null];
         }
 
-        return $this->shippingCostResolver;
+        try {
+            $store = $product->getStore() ?: null;
+            $excl = $this->normalizeDecimal(
+                $this->taxHelper->getShippingPrice($raw, false, null, null, $store)
+            );
+            $incl = $this->normalizeDecimal(
+                $this->taxHelper->getShippingPrice($raw, true, null, null, $store)
+            );
+        } catch (\Throwable $exception) {
+            // Fallback: expose raw value unchanged so the field stays useful.
+            $excl = $this->normalizeDecimal($raw);
+            $incl = $this->normalizeDecimal($raw);
+        }
+
+        return ['excl_vat' => $excl, 'incl_vat' => $incl];
     }
 
     /**
@@ -530,22 +553,10 @@ class ProductMapper
     private function resolveDeliveryTime(Product $catalogProduct)
     {
         try {
-            return $this->normalizeString($this->getDeliveryTimeProvider()->resolve($catalogProduct));
+            return $this->normalizeString($this->deliveryTimeProvider->resolve($catalogProduct));
         } catch (\Throwable $exception) {
             return null;
         }
-    }
-
-    /**
-     * @return DeliveryTimeProviderInterface
-     */
-    private function getDeliveryTimeProvider()
-    {
-        if ($this->deliveryTimeProvider === null) {
-            $this->deliveryTimeProvider = ObjectManager::getInstance()->get(DeliveryTimeProviderInterface::class);
-        }
-
-        return $this->deliveryTimeProvider;
     }
 
     /**
@@ -730,12 +741,10 @@ class ProductMapper
     }
 
     /**
-     * API field "description" is mapped to product name.
-     *
      * @param Product $catalogProduct
      * @return string|null
      */
-    private function resolveDescription(Product $catalogProduct)
+    private function resolveName(Product $catalogProduct)
     {
         $name = $this->normalizeString($catalogProduct->getName());
         if ($name !== null) {

@@ -8,6 +8,7 @@ use Magento\Catalog\Model\Product\Type as ProductType;
 use Magento\Catalog\Model\Product\Visibility as ProductVisibility;
 use Magento\Catalog\Model\ResourceModel\Product\Collection as ProductCollection;
 use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory as ProductCollectionFactory;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\Indexer\DimensionFactory;
 use Magento\Store\Model\Indexer\WebsiteDimensionProvider;
 use Magento\Store\Model\StoreManagerInterface;
@@ -101,7 +102,7 @@ class ProductManagement implements ProductManagementInterface
         $category_id = null,
         $supplier_id = null,
         $brand_id = null,
-        $article_number = null,
+        $sku = null,
         $ean = null,
         $stock = null,
         $page = 1,
@@ -111,7 +112,8 @@ class ProductManagement implements ProductManagementInterface
         $purchase_price_from = null,
         $purchase_price_to = null,
         $sort_by = null,
-        $sort_order = null
+        $sort_order = null,
+        $attr = []
     ) {
         $page = max(1, (int) $page);
         $perPage = min(max(1, (int) $per_page), 200);
@@ -140,12 +142,16 @@ class ProductManagement implements ProductManagementInterface
             'type_id',
         ]);
         $collection->addAttributeToSelect(
-            $this->attributeProvider->getExistingProductAttributes([
-                $barcodeAttributeCode,
-                $manufacturerNumberAttributeCode,
-                $brandAttributeCode,
-                $unitAttributeCode,
-            ])
+            $this->attributeProvider->getExistingProductAttributes(array_merge(
+                [
+                    $barcodeAttributeCode,
+                    $manufacturerNumberAttributeCode,
+                    $brandAttributeCode,
+                    $supplierAttributeCode,
+                    $unitAttributeCode,
+                ],
+                $this->attributeProvider->getAdditionalAttributeCodes()
+            ))
         );
         $collection->joinField(
             'qty',
@@ -169,21 +175,27 @@ class ProductManagement implements ProductManagementInterface
             $collection->addCategoriesFilter(['in' => $categoryIds]);
         }
 
-        if ($article_number) {
-            $collection->addAttributeToFilter('sku', ['like' => '%' . $article_number . '%']);
+        $skuValues = $this->normalizeMultiValue($sku);
+        if (!empty($skuValues)) {
+            $collection->addAttributeToFilter('sku', $this->buildLikeFilter($skuValues));
         }
 
-        if ($ean && $this->attributeProvider->hasProductAttribute($barcodeAttributeCode)) {
-            $collection->addAttributeToFilter($barcodeAttributeCode, ['like' => '%' . $ean . '%']);
+        $eanValues = $this->normalizeMultiValue($ean);
+        if (!empty($eanValues) && $this->attributeProvider->hasProductAttribute($barcodeAttributeCode)) {
+            $collection->addAttributeToFilter($barcodeAttributeCode, $this->buildLikeFilter($eanValues));
         }
 
-        if ($supplier_id && $this->attributeProvider->hasProductAttribute($supplierAttributeCode)) {
-            $collection->addAttributeToFilter($supplierAttributeCode, $supplier_id);
+        $supplierValues = $this->normalizeMultiValue($supplier_id);
+        if (!empty($supplierValues) && $this->attributeProvider->hasProductAttribute($supplierAttributeCode)) {
+            $collection->addAttributeToFilter($supplierAttributeCode, $this->buildExactFilter($supplierValues));
         }
 
-        if ($brand_id && $this->attributeProvider->hasProductAttribute($brandAttributeCode)) {
-            $collection->addAttributeToFilter($brandAttributeCode, $brand_id);
+        $brandValues = $this->normalizeMultiValue($brand_id);
+        if (!empty($brandValues) && $this->attributeProvider->hasProductAttribute($brandAttributeCode)) {
+            $collection->addAttributeToFilter($brandAttributeCode, $this->buildExactFilter($brandValues));
         }
+
+        $this->applyAdditionalAttributeFilters($collection, $attr);
 
         $normalizedStock = strtolower((string) $stock);
         if (in_array($normalizedStock, ['1', 'true', 'in_stock', 'in-stock'], true)) {
@@ -240,6 +252,26 @@ class ProductManagement implements ProductManagementInterface
     {
         $store = $this->storeManager->getStore();
         $product = $this->productRepository->get($sku, false, $store->getId(), true);
+
+        // The list endpoint silently filters by status/visibility/type; mirror
+        // that contract here so a disabled or hidden SKU surfaces as a 404
+        // instead of leaking data that the list would not have shown.
+        if ((int) $product->getStatus() !== ProductStatus::STATUS_ENABLED) {
+            throw NoSuchEntityException::singleField('sku', $sku);
+        }
+
+        $allowedVisibility = [
+            ProductVisibility::VISIBILITY_IN_CATALOG,
+            ProductVisibility::VISIBILITY_IN_SEARCH,
+            ProductVisibility::VISIBILITY_BOTH,
+        ];
+        if (!in_array((int) $product->getVisibility(), $allowedVisibility, true)) {
+            throw NoSuchEntityException::singleField('sku', $sku);
+        }
+
+        if (!in_array((string) $product->getTypeId(), self::ALLOWED_PRODUCT_TYPES, true)) {
+            throw NoSuchEntityException::singleField('sku', $sku);
+        }
 
         return $this->productMapper->map($product);
     }
@@ -325,13 +357,13 @@ class ProductManagement implements ProductManagementInterface
         }
 
         switch ((string) $sortBy) {
-            case 'article_number':
+            case 'sku':
                 $collection->setOrder('sku', $direction);
                 break;
-            case 'description':
+            case 'name':
                 $collection->setOrder('name', $direction);
                 break;
-            case 'brand_dge':
+            case 'brand':
                 $brandAttributeCode = $this->attributeProvider->getBrandAttributeCode();
                 if ($brandAttributeCode && $this->attributeProvider->hasProductAttribute($brandAttributeCode)) {
                     $collection->setOrder($brandAttributeCode, $direction);
@@ -398,6 +430,116 @@ class ProductManagement implements ProductManagementInterface
 
         if (is_scalar($value)) {
             $values[] = $value;
+        }
+    }
+
+    /**
+     * Normalize a request value into a flat list of non-empty strings.
+     * Accepts scalar, comma-separated string, or array-of-arrays.
+     *
+     * @param mixed $value
+     * @return string[]
+     */
+    private function normalizeMultiValue($value)
+    {
+        if ($value === null || $value === '') {
+            return [];
+        }
+
+        if (!is_array($value)) {
+            $value = [$value];
+        }
+
+        $flat = [];
+        array_walk_recursive($value, static function ($item) use (&$flat) {
+            if ($item === null || is_bool($item) || is_array($item) || is_object($item)) {
+                return;
+            }
+
+            $string = trim((string) $item);
+            if ($string !== '') {
+                $flat[] = $string;
+            }
+        });
+
+        return array_values(array_unique($flat));
+    }
+
+    /**
+     * Build a Magento collection filter condition for an exact-match attribute.
+     * Returns a scalar for a single value and an `in` condition for multi.
+     *
+     * @param string[] $values
+     * @return string|array
+     */
+    private function buildExactFilter(array $values)
+    {
+        if (count($values) === 1) {
+            return $values[0];
+        }
+
+        return ['in' => $values];
+    }
+
+    /**
+     * Build a Magento collection filter condition for a LIKE attribute.
+     * Single value → `['like' => '%v%']`; multi → array of `like` conditions
+     * which Magento OR-joins.
+     *
+     * @param string[] $values
+     * @return array
+     */
+    private function buildLikeFilter(array $values)
+    {
+        if (count($values) === 1) {
+            return ['like' => '%' . $values[0] . '%'];
+        }
+
+        $conditions = [];
+        foreach ($values as $value) {
+            $conditions[] = ['like' => '%' . $value . '%'];
+        }
+
+        return $conditions;
+    }
+
+    /**
+     * Apply `attr[code]=value` (or `attr[code][]=v1&attr[code][]=v2`) filters.
+     * Only attributes declared in admin → Additional Attributes are honored.
+     * Unknown codes and codes hardcoded in this controller are silently skipped.
+     *
+     * @param ProductCollection $collection
+     * @param mixed $attr
+     * @return void
+     */
+    private function applyAdditionalAttributeFilters(ProductCollection $collection, $attr)
+    {
+        if (!is_array($attr) || empty($attr)) {
+            return;
+        }
+
+        $allowedCodes = array_flip($this->attributeProvider->getAdditionalAttributeCodes());
+        if (empty($allowedCodes)) {
+            return;
+        }
+
+        foreach ($attr as $code => $rawValue) {
+            $code = is_string($code) ? trim($code) : '';
+            if ($code === '' || !isset($allowedCodes[$code])) {
+                continue;
+            }
+
+            $values = $this->normalizeMultiValue($rawValue);
+            if (empty($values)) {
+                continue;
+            }
+
+            $operator = $this->attributeProvider->resolveAttributeOperator($code);
+            $condition = $operator === 'like'
+                ? $this->buildLikeFilter($values)
+                : $this->buildExactFilter($values);
+
+            $collection->addAttributeToFilter($code, $condition);
         }
     }
 }

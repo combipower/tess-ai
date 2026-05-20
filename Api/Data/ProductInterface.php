@@ -4,13 +4,14 @@ namespace Combipower\TessAI\Api\Data;
 interface ProductInterface
 {
     public const ID = 'id';
-    public const ARTICLE_NUMBER = 'article_number';
+    public const SKU = 'sku';
     public const BARCODE = 'barcode';
     public const EAN = 'ean';
     public const MANUFACTURER_NUMBER = 'manufacturer_number';
-    public const DESCRIPTION = 'description';
-    public const BRAND_DGE = 'brand_dge';
-    public const ARTICLE_GROUP = 'article_group';
+    public const SUPPLIER = 'supplier';
+    public const UNIT = 'unit';
+    public const NAME = 'name';
+    public const BRAND = 'brand';
     public const DELIVERY_TIME = 'delivery_time';
     public const PRODUCT_TYPE = 'product_type';
     public const PRICE = 'price';
@@ -18,6 +19,7 @@ interface ProductInterface
     public const ORDER_NUMBER = 'order_number';
     public const CATEGORY_ID = 'category_id';
     public const SALE_UNITS = 'sale_units';
+    public const ADDITIONAL_ATTRIBUTES = 'additional_attributes';
 
     /**
      * @return string|null
@@ -27,7 +29,7 @@ interface ProductInterface
     /**
      * @return string|null
      */
-    public function getArticleNumber();
+    public function getSku();
 
     /**
      * @return string
@@ -45,19 +47,30 @@ interface ProductInterface
     public function getManufacturerNumber();
 
     /**
+     * Value of the configured supplier attribute (Admin → Attribute Mapping).
+     *
      * @return string|null
      */
-    public function getDescription();
+    public function getSupplier();
+
+    /**
+     * Raw value of the configured unit attribute (Admin → Attribute Mapping).
+     * The same value powers `sale_units[].label`; this field exposes it once
+     * at the product level for clients that don't iterate sale_units.
+     *
+     * @return string|null
+     */
+    public function getUnit();
 
     /**
      * @return string|null
      */
-    public function getBrandDge();
+    public function getName();
 
     /**
      * @return string|null
      */
-    public function getArticleGroup();
+    public function getBrand();
 
     /**
      * @return string|null
@@ -95,16 +108,25 @@ interface ProductInterface
     public function getSaleUnits();
 
     /**
+     * Extra attribute values configured via Admin → Combipower → TESS AI →
+     * Additional Attributes. Returned as a list of {code, value} pairs so
+     * Magento's webapi marshaller preserves both halves.
+     *
+     * @return \Combipower\TessAI\Api\Data\AdditionalAttributeInterface[]
+     */
+    public function getAdditionalAttributes();
+
+    /**
      * @param string $id
      * @return \Combipower\TessAI\Api\Data\ProductInterface
      */
     public function setId($id);
 
     /**
-     * @param string $articleNumber
+     * @param string $sku
      * @return \Combipower\TessAI\Api\Data\ProductInterface
      */
-    public function setArticleNumber($articleNumber);
+    public function setSku($sku);
 
     /**
      * @param string|null $barcode
@@ -125,22 +147,28 @@ interface ProductInterface
     public function setManufacturerNumber($manufacturerNumber);
 
     /**
-     * @param string|null $description
+     * @param string|null $supplier
      * @return \Combipower\TessAI\Api\Data\ProductInterface
      */
-    public function setDescription($description);
+    public function setSupplier($supplier);
 
     /**
-     * @param string|null $brandDge
+     * @param string|null $unit
      * @return \Combipower\TessAI\Api\Data\ProductInterface
      */
-    public function setBrandDge($brandDge);
+    public function setUnit($unit);
 
     /**
-     * @param string|null $articleGroup
+     * @param string|null $name
      * @return \Combipower\TessAI\Api\Data\ProductInterface
      */
-    public function setArticleGroup($articleGroup);
+    public function setName($name);
+
+    /**
+     * @param string|null $brand
+     * @return \Combipower\TessAI\Api\Data\ProductInterface
+     */
+    public function setBrand($brand);
 
     /**
      * @param string|null $deliveryTime
@@ -183,4 +211,10 @@ interface ProductInterface
      * @return \Combipower\TessAI\Api\Data\ProductInterface
      */
     public function setSaleUnits(array $saleUnits);
+
+    /**
+     * @param \Combipower\TessAI\Api\Data\AdditionalAttributeInterface[] $additionalAttributes
+     * @return \Combipower\TessAI\Api\Data\ProductInterface
+     */
+    public function setAdditionalAttributes(array $additionalAttributes);
 }
