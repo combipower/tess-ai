@@ -6,6 +6,7 @@ use Magento\Eav\Model\Config as EavConfig;
 use Magento\Framework\App\ResourceConnection;
 use Combipower\TessAI\Api\Data\AdditionalAttributeInterface;
 use Combipower\TessAI\Model\Config\AttributeMapping;
+use Combipower\TessAI\Model\Config\ShippingEstimate;
 use Combipower\TessAI\Model\Data\AdditionalAttributeFactory;
 
 class AttributeProvider
@@ -30,16 +31,23 @@ class AttributeProvider
      */
     private $additionalAttributeFactory;
 
+    /**
+     * @var ShippingEstimate
+     */
+    private $shippingEstimate;
+
     public function __construct(
         EavConfig $eavConfig,
         ResourceConnection $resourceConnection,
         AttributeMapping $attributeMapping,
-        AdditionalAttributeFactory $additionalAttributeFactory
+        AdditionalAttributeFactory $additionalAttributeFactory,
+        ShippingEstimate $shippingEstimate
     ) {
         $this->eavConfig = $eavConfig;
         $this->resourceConnection = $resourceConnection;
         $this->attributeMapping = $attributeMapping;
         $this->additionalAttributeFactory = $additionalAttributeFactory;
+        $this->shippingEstimate = $shippingEstimate;
     }
 
     /**
@@ -97,6 +105,19 @@ class AttributeProvider
         }
 
         return $result;
+    }
+
+    /**
+     * Return the configured shipping-quote attribute codes, filtered to those
+     * that actually exist as product attributes. These are loaded into the
+     * product/child collections so the temporary shipping quote evaluates
+     * carrier table rates and restriction rules against real values.
+     *
+     * @return string[]
+     */
+    public function getShippingQuoteAttributeCodes()
+    {
+        return $this->getExistingProductAttributes($this->shippingEstimate->getQuoteAttributeCodes());
     }
 
     /**

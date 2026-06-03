@@ -668,17 +668,20 @@ class ProductMapper
                 $collection->setStoreId($store->getId());
             }
 
-            $attributesToSelect = array_values(array_unique(array_filter([
-                'name',
-                'price',
-                'cost',
-                'special_price',
-                'tax_class_id',
-                'type_id',
-                self::EXTRA_FREE_ATTRIBUTE_CODE,
-                self::HAS_TESS_PRICE_ATTRIBUTE_CODE,
-                $this->attributeProvider->getUnitAttributeCode(),
-            ])));
+            $attributesToSelect = array_values(array_unique(array_filter(array_merge(
+                [
+                    'name',
+                    'price',
+                    'cost',
+                    'special_price',
+                    'tax_class_id',
+                    'type_id',
+                    self::EXTRA_FREE_ATTRIBUTE_CODE,
+                    self::HAS_TESS_PRICE_ATTRIBUTE_CODE,
+                    $this->attributeProvider->getUnitAttributeCode(),
+                ],
+                $this->attributeProvider->getShippingQuoteAttributeCodes()
+            ))));
             $collection->addAttributeToSelect($attributesToSelect);
 
             if (method_exists($collection, 'addFilterByRequiredOptions')) {

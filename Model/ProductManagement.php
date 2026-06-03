@@ -155,6 +155,7 @@ class ProductManagement implements ProductManagementInterface
                 $this->attributeProvider->getAdditionalAttributeCodes()
             ))
         );
+        $collection->addAttributeToSelect($this->attributeProvider->getShippingQuoteAttributeCodes());
         $collection->joinField(
             'qty',
             'cataloginventory_stock_item',

@@ -18,6 +18,7 @@
                 <postcode>1011AC</postcode>
                 <city>Amsterdam</city>
                 <street>Dam 1</street>
+                <quote_attributes>weight,length,width,height</quote_attributes>
             </shipping_estimate>
             <delivery_time>
                 <message_template/>

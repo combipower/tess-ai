@@ -14,6 +14,7 @@ class ShippingEstimate
     public const XML_PATH_CITY = 'combipower_tess_ai/shipping_estimate/city';
     public const XML_PATH_STREET = 'combipower_tess_ai/shipping_estimate/street';
     public const XML_PATH_SHIPPING_METHOD = 'combipower_tess_ai/shipping_estimate/shipping_method';
+    public const XML_PATH_QUOTE_ATTRIBUTES = 'combipower_tess_ai/shipping_estimate/quote_attributes';
 
     /**
      * @var ScopeConfigInterface
@@ -95,6 +96,32 @@ class ShippingEstimate
     }
 
     /**
+     * Product attribute codes to load into the temporary shipping quote so
+     * carrier table rates and restriction rules (dimensions/weight) evaluate
+     * against real values instead of empty ones. Stored as a multiselect
+     * (comma-separated). Non-existing codes are filtered downstream.
+     *
+     * @return string[]
+     */
+    public function getQuoteAttributeCodes()
+    {
+        $value = $this->getConfiguredString(self::XML_PATH_QUOTE_ATTRIBUTES);
+        if ($value === null) {
+            return [];
+        }
+
+        $codes = [];
+        foreach (explode(',', $value) as $code) {
+            $code = trim($code);
+            if ($code !== '') {
+                $codes[$code] = $code;
+            }
+        }
+
+        return array_values($codes);
+    }
+
+    /**
      * @return string
      */
     public function getCacheKey()
@@ -107,6 +134,7 @@ class ShippingEstimate
             $this->getCity(),
             $this->getStreet(),
             $this->getShippingMethod(),
+            implode(',', $this->getQuoteAttributeCodes()),
         ]);
     }
 

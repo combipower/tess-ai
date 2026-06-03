@@ -46,6 +46,16 @@ Defaults are set to Netherlands:
 
 If `Shipping Method Code` is empty, the API uses the cheapest available shipping rate. To force one method, enter its Magento rate code, for example `flatrate_flatrate`.
 
+### Shipping Quote Attributes
+
+`shipping_cost` is estimated by building a temporary quote. Carrier table rates and shipping restriction rules often depend on product **dimensions/weight** (e.g. `length`, `width`, `height`, `weight`). If those attributes are not loaded onto the quote product, the estimate evaluates the rules against empty values and may return a cheaper method than the real checkout.
+
+Pick the attributes to load in Admin:
+
+- `Stores > Configuration > Combipower > TESS AI > Shipping Estimate > Shipping Quote Attributes`
+
+Default: `weight`, `length`, `width`, `height`. Add any extra attribute your shipping rules depend on. Non-existing codes are ignored.
+
 ## Activation
 
 Install module via Composer:

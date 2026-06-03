@@ -59,6 +59,13 @@
             <group id="shipping_estimate" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Shipping Estimate</label>
 
+                <field id="quote_attributes" translate="label comment" type="multiselect" sortOrder="5" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Shipping Quote Attributes</label>
+                    <source_model>Combipower\TessAI\Model\Config\Source\ProductAttribute</source_model>
+                    <can_be_empty>1</can_be_empty>
+                    <comment><![CDATA[Product attributes loaded into the temporary quote used to estimate <code>shipping_cost</code>. Carrier table rates and shipping restriction rules often depend on dimensions/weight (e.g. <code>length</code>, <code>width</code>, <code>height</code>, <code>weight</code>). If they are not loaded the quote sees empty values and may pick a cheaper method than real checkout. Default: weight + dimensions.]]></comment>
+                </field>
+
                 <field id="country_id" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Default Shipping Country</label>
                     <source_model>Magento\Directory\Model\Config\Source\Country</source_model>
