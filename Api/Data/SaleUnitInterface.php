@@ -17,6 +17,8 @@ interface SaleUnitInterface
     public const SHIPPING_COST_EXCL_VAT = 'shipping_cost_excl_vat';
     public const SHIPPING_COST_INCL_VAT = 'shipping_cost_incl_vat';
     public const AVAILABLE_STOCK = 'available_stock';
+    public const EXTRA_FREE = 'extra_free';
+    public const HAS_TESS_PRICE = 'has_tess_price';
 
     /**
      * @return string|null
@@ -90,6 +92,16 @@ interface SaleUnitInterface
      * @return float|null
      */
     public function getAvailableStock();
+
+    /**
+     * @return float|null
+     */
+    public function getExtraFree();
+
+    /**
+     * @return bool
+     */
+    public function getHasTessPrice();
 
     /**
      * @param string $id
@@ -174,4 +186,16 @@ interface SaleUnitInterface
      * @return \Combipower\TessAI\Api\Data\SaleUnitInterface
      */
     public function setAvailableStock($stock);
+
+    /**
+     * @param float|null $extraFree
+     * @return \Combipower\TessAI\Api\Data\SaleUnitInterface
+     */
+    public function setExtraFree($extraFree);
+
+    /**
+     * @param bool $hasTessPrice
+     * @return \Combipower\TessAI\Api\Data\SaleUnitInterface
+     */
+    public function setHasTessPrice($hasTessPrice);
 }

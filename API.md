@@ -236,7 +236,9 @@ The following filters are applied implicitly — disabled / hidden / unsupported
           "shipping_cost": 5.99,
           "shipping_cost_excl_vat": 4.95,
           "shipping_cost_incl_vat": 5.99,
-          "available_stock": 1
+          "available_stock": 1,
+          "extra_free": 2.0,
+          "has_tess_price": true
         }
       ],
       "additional_attributes": [
@@ -289,6 +291,8 @@ The following filters are applied implicitly — disabled / hidden / unsupported
 | `shipping_cost_excl_vat` | float \| null | Estimated shipping for the configured destination, **excluding** VAT. Computed via `TaxHelper::getShippingPrice` against the configured shipping tax class. |
 | `shipping_cost_incl_vat` | float \| null | Estimated shipping for the configured destination, **including** VAT. |
 | `available_stock` | float \| null | Raw physical stock qty (**not** salable qty). When `Magento_InventoryApi` is enabled, this is `SUM(inventory_source_item.quantity)` across all sources where `status=1`. Otherwise it falls back to `cataloginventory_stock_item.qty` (stock_id=1). Reservations are NOT subtracted. |
+| `extra_free` | float \| null | Raw value of the `extra_free` decimal product attribute. Simple/virtual: taken from the product itself (same value on every sale unit). Configurable: taken from each child variant. `null` when unset/empty. |
+| `has_tess_price` | bool | Value of the `has_tess_price` Yes/No product attribute. Simple/virtual: taken from the product itself. Configurable: taken from each child variant. Defaults to `false` when unset. |
 
 ### Examples
 

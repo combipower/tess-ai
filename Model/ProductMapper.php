@@ -14,6 +14,10 @@ class ProductMapper
 {
     private const CONFIGURABLE_PRODUCT_TYPE = 'configurable';
 
+    private const EXTRA_FREE_ATTRIBUTE_CODE = 'extra_free';
+
+    private const HAS_TESS_PRICE_ATTRIBUTE_CODE = 'has_tess_price';
+
     /**
      * @var ProductFactory
      */
@@ -121,6 +125,8 @@ class ProductMapper
             : [];
 
         if (empty($saleUnits)) {
+            $extraFree = $this->resolveExtraFree($catalogProduct);
+            $hasTessPrice = $this->resolveHasTessPrice($catalogProduct);
             foreach ($tierPriceRows as $tierPriceRow) {
                 $unitAmount = $tierPriceRow['qty'];
                 $unitId = $this->formatUnitAmount($unitAmount);
@@ -145,7 +151,9 @@ class ProductMapper
                     ->setShippingCost($shipping['incl_vat'])
                     ->setShippingCostExclVat($shipping['excl_vat'])
                     ->setShippingCostInclVat($shipping['incl_vat'])
-                    ->setAvailableStock($stockQty);
+                    ->setAvailableStock($stockQty)
+                    ->setExtraFree($extraFree)
+                    ->setHasTessPrice($hasTessPrice);
             }
         }
 
@@ -503,10 +511,43 @@ class ProductMapper
                 ->setShippingCost($shipping['incl_vat'])
                 ->setShippingCostExclVat($shipping['excl_vat'])
                 ->setShippingCostInclVat($shipping['incl_vat'])
-                ->setAvailableStock($this->resolveStockQty($childProduct));
+                ->setAvailableStock($this->resolveStockQty($childProduct))
+                ->setExtraFree($this->resolveExtraFree($childProduct))
+                ->setHasTessPrice($this->resolveHasTessPrice($childProduct));
         }
 
         return $saleUnits;
+    }
+
+    /**
+     * Resolve the raw `extra_free` decimal attribute for a product. Returns null
+     * when the attribute is unset or empty so it marshals to JSON `null` instead
+     * of `0`.
+     *
+     * @param Product $product
+     * @return float|null
+     */
+    private function resolveExtraFree(Product $product)
+    {
+        return $this->normalizeDecimal($product->getData(self::EXTRA_FREE_ATTRIBUTE_CODE));
+    }
+
+    /**
+     * Resolve the `has_tess_price` boolean attribute for a product. Defaults to
+     * false when the attribute is unset/empty so the field always marshals to an
+     * explicit boolean; otherwise casts the stored 0/1 to a boolean.
+     *
+     * @param Product $product
+     * @return bool
+     */
+    private function resolveHasTessPrice(Product $product)
+    {
+        $value = $product->getData(self::HAS_TESS_PRICE_ATTRIBUTE_CODE);
+        if ($value === null || $value === '') {
+            return false;
+        }
+
+        return (bool) (int) $value;
     }
 
     /**
@@ -634,6 +675,8 @@ class ProductMapper
                 'special_price',
                 'tax_class_id',
                 'type_id',
+                self::EXTRA_FREE_ATTRIBUTE_CODE,
+                self::HAS_TESS_PRICE_ATTRIBUTE_CODE,
                 $this->attributeProvider->getUnitAttributeCode(),
             ])));
             $collection->addAttributeToSelect($attributesToSelect);

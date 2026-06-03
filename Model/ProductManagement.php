@@ -140,6 +140,8 @@ class ProductManagement implements ProductManagementInterface
             'cost',
             'tax_class_id',
             'type_id',
+            'extra_free',
+            'has_tess_price',
         ]);
         $collection->addAttributeToSelect(
             $this->attributeProvider->getExistingProductAttributes(array_merge(
