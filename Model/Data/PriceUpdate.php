@@ -21,6 +21,16 @@ class PriceUpdate extends AbstractSimpleObject implements PriceUpdateInterface
         return $this->_get(self::SPECIAL_PRICE);
     }
 
+    public function getSpecialFromDate()
+    {
+        return $this->_get(self::SPECIAL_FROM_DATE);
+    }
+
+    public function getSpecialToDate()
+    {
+        return $this->_get(self::SPECIAL_TO_DATE);
+    }
+
     public function setSku($sku)
     {
         return $this->setData(self::SKU, $sku);
@@ -34,5 +44,15 @@ class PriceUpdate extends AbstractSimpleObject implements PriceUpdateInterface
     public function setSpecialPrice($specialPrice)
     {
         return $this->setData(self::SPECIAL_PRICE, $specialPrice);
+    }
+
+    public function setSpecialFromDate($specialFromDate)
+    {
+        return $this->setData(self::SPECIAL_FROM_DATE, $specialFromDate);
+    }
+
+    public function setSpecialToDate($specialToDate)
+    {
+        return $this->setData(self::SPECIAL_TO_DATE, $specialToDate);
     }
 }

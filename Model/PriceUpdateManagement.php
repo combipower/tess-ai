@@ -50,7 +50,7 @@ class PriceUpdateManagement implements PriceUpdateManagementInterface
             $result = $this->resultFactory->create()->setSku($sku);
 
             try {
-                $this->applyUpdate($sku, $item->getPrice(), $item->getSpecialPrice());
+                $this->applyUpdate($sku, $item);
                 $result->setSuccess(true)->setMessage(null);
             } catch (NoSuchEntityException $exception) {
                 $result->setSuccess(false)->setMessage((string) $exception->getMessage());
@@ -69,24 +69,23 @@ class PriceUpdateManagement implements PriceUpdateManagementInterface
     }
 
     /**
-     * Load the product in default scope, apply the new price (+ optional
-     * special price), flag it as TESS-priced and persist.
+     * Load the product in default scope, apply the new price (+ optional special
+     * price and validity dates), flag it as TESS-priced and persist.
      *
      * @param string $sku
-     * @param mixed $price
-     * @param mixed $specialPrice
+     * @param \Combipower\TessAI\Api\Data\PriceUpdateInterface $item
      * @return void
-     * @throws \Magento\Framework\Exception\LocalizedException
+     * @throws LocalizedException
      */
-    private function applyUpdate($sku, $price, $specialPrice)
+    private function applyUpdate($sku, $item)
     {
         if ($sku === '') {
-            throw new \Magento\Framework\Exception\LocalizedException(__('SKU is required.'));
+            throw new LocalizedException(__('SKU is required.'));
         }
 
-        $normalizedPrice = $this->normalizePrice($price);
+        $normalizedPrice = $this->normalizePrice($item->getPrice());
         if ($normalizedPrice === null) {
-            throw new \Magento\Framework\Exception\LocalizedException(
+            throw new LocalizedException(
                 __('A valid non-negative price is required for SKU "%1".', $sku)
             );
         }
@@ -97,19 +96,85 @@ class PriceUpdateManagement implements PriceUpdateManagementInterface
         $product->setStoreId(Store::DEFAULT_STORE_ID);
         $product->setPrice($normalizedPrice);
 
+        $specialPrice = $item->getSpecialPrice();
         if ($specialPrice !== null && $specialPrice !== '') {
             $normalizedSpecial = $this->normalizePrice($specialPrice);
             if ($normalizedSpecial === null) {
-                throw new \Magento\Framework\Exception\LocalizedException(
+                throw new LocalizedException(
                     __('Invalid special price for SKU "%1".', $sku)
                 );
             }
             $product->setSpecialPrice($normalizedSpecial);
         }
 
+        $this->applyDate($product, 'special_from_date', $item->getSpecialFromDate(), $sku);
+        $this->applyDate($product, 'special_to_date', $item->getSpecialToDate(), $sku);
+
         $product->setData(self::HAS_TESS_PRICE_ATTRIBUTE_CODE, 1);
 
         $this->productRepository->save($product);
+    }
+
+    /**
+     * Apply a special-price validity date to the product.
+     *
+     * - `null` (field omitted) → leave the current value untouched.
+     * - empty string `''` → clear the date.
+     * - a valid `Y-m-d` or `Y-m-d H:i:s` string → set it (normalized).
+     *
+     * @param \Magento\Catalog\Api\Data\ProductInterface $product
+     * @param string $attributeCode
+     * @param mixed $value
+     * @param string $sku
+     * @return void
+     * @throws LocalizedException
+     */
+    private function applyDate($product, $attributeCode, $value, $sku)
+    {
+        if ($value === null) {
+            return;
+        }
+
+        if ($value === '') {
+            $product->setData($attributeCode, null);
+            return;
+        }
+
+        $normalized = $this->normalizeDate($value);
+        if ($normalized === null) {
+            throw new LocalizedException(
+                __('Invalid "%1" for SKU "%2". Use Y-m-d or Y-m-d H:i:s.', $attributeCode, $sku)
+            );
+        }
+
+        $product->setData($attributeCode, $normalized);
+    }
+
+    /**
+     * Validate and normalize a date string to `Y-m-d H:i:s`. Accepts `Y-m-d`
+     * (time defaults to 00:00:00) and `Y-m-d H:i:s`. Returns null when invalid.
+     *
+     * @param mixed $value
+     * @return string|null
+     */
+    private function normalizeDate($value)
+    {
+        $value = trim((string) $value);
+        if ($value === '') {
+            return null;
+        }
+
+        foreach (['Y-m-d H:i:s', 'Y-m-d'] as $format) {
+            $date = \DateTime::createFromFormat($format, $value);
+            if ($date !== false && $date->format($format) === $value) {
+                if ($format === 'Y-m-d') {
+                    $date->setTime(0, 0, 0);
+                }
+                return $date->format('Y-m-d H:i:s');
+            }
+        }
+
+        return null;
     }
 
     /**
