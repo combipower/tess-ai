@@ -8,12 +8,14 @@ Base Magento 2 module for the Combipower TESS AI REST integration.
 - `GET /rest/<store_code>/V1/tessAi/filters`
 - `GET /rest/<store_code>/V1/tessAi/products`
 - `GET /rest/<store_code>/V1/tessAi/products/{sku}`
+- `POST /rest/<store_code>/V1/tessAi/prices` — bulk update prices by SKU (sets `has_tess_price`)
 
 ## Authentication
 
-The API routes are protected by the custom ACL resource:
+The API routes are protected by custom ACL resources:
 
-- `Combipower_TessAI::read`
+- `Combipower_TessAI::read` — all `GET` endpoints
+- `Combipower_TessAI::write` — the `POST /V1/tessAi/prices` bulk price update
 
 The admin configuration section uses:
 

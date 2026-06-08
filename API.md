@@ -37,6 +37,9 @@ Integration tokens do not expire until revoked.
 | GET | `/V1/tessAi/filters` | Available filter options (suppliers, brands, article numbers) | No |
 | GET | `/V1/tessAi/products` | List products with filters | Yes |
 | GET | `/V1/tessAi/products/{sku}` | Get one product by SKU | — |
+| POST | `/V1/tessAi/prices` | Bulk update prices by SKU (sets `has_tess_price`) | — |
+
+> **Note:** the read endpoints require ACL `Combipower_TessAI::read`. The write endpoint `POST /V1/tessAi/prices` requires `Combipower_TessAI::write` — grant it under *API > Resources > TESS Pricing Tool API > Update Pricing Tool Data*.
 
 ---
 
@@ -388,7 +391,68 @@ Field reference is identical to items in `/products` — see section 5.
 
 ---
 
-## 7. Multi-store
+## 7. `POST /V1/tessAi/prices`
+
+Bulk update product prices by SKU. **Every successfully updated product gets `has_tess_price` set to `true`.**
+
+Requires ACL `Combipower_TessAI::write`.
+
+Prices are written in the **default (admin) scope** (store 0). On a global price-scope shop this updates the price everywhere; on website/store scope it updates the default value.
+
+### Request
+
+```json
+{
+  "items": [
+    { "sku": "404634",     "price": 99.95 },
+    { "sku": "10116-stuks", "price": 23.16, "special_price": 19.99 }
+  ]
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
+| `items[].sku` | string | yes | Product SKU to update |
+| `items[].price` | float | yes | New base price (excl. VAT), must be ≥ 0 |
+| `items[].special_price` | float | no | New special price (excl. VAT), must be ≥ 0 when present |
+
+### Behaviour
+
+- **Per-item processing:** a failing SKU does not abort the batch — its result row carries `success: false` and a `message`.
+- Setting `price` flags the product with `has_tess_price = true`.
+- `special_price` is only changed when provided; omit it to leave it untouched.
+- For configurable parents, `price` has no catalog effect (price comes from children) but the flag is still set — send child SKUs to change actual prices.
+
+### Response
+
+Array of per-item results, in the same order as the request:
+
+```json
+[
+  { "sku": "404634",      "success": true,  "message": null },
+  { "sku": "10116-stuks", "success": true,  "message": null },
+  { "sku": "BAD-SKU",     "success": false, "message": "The product that was requested doesn't exist. Verify the product and try again." }
+]
+```
+
+| Field | Type | Description |
+|---|---|---|
+| `sku` | string | Echoed SKU |
+| `success` | bool | `true` when the product was updated and saved |
+| `message` | string \| null | Error detail when `success` is `false`, otherwise `null` |
+
+### Example
+
+```bash
+curl -s -X POST -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  "$BASE/rest/V1/tessAi/prices" \
+  -d '{"items":[{"sku":"404634","price":99.95},{"sku":"10116-stuks","price":23.16,"special_price":19.99}]}'
+```
+
+---
+
+## 8. Multi-store
 
 Pass `store_code` in the URL to switch store context (changes category tree, attribute values, currency, tax rules):
 
@@ -399,7 +463,7 @@ curl -H "Authorization: Bearer $TOKEN" "$BASE/rest/en_us/V1/tessAi/products"
 
 ---
 
-## 8. HTTP status codes
+## 9. HTTP status codes
 
 | Status | Cause | Body |
 |---|---|---|
@@ -411,7 +475,7 @@ curl -H "Authorization: Bearer $TOKEN" "$BASE/rest/en_us/V1/tessAi/products"
 
 ---
 
-## 9. Notes for integrators
+## 10. Notes for integrators
 
 - **Currency:** all monetary fields (`value`, `*_excl_vat`, `*_incl_vat`, `shipping_cost`) are in `sale_units[].currency`.
 - **Tax:** `*_incl_vat` follows the product's tax class plus the store's tax rule. Values may differ per store.

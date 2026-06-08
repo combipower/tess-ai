@@ -5,6 +5,7 @@
             <resource id="Magento_Backend::admin">
                 <resource id="Combipower_TessAI::api" title="TESS Pricing Tool API" sortOrder="10">
                     <resource id="Combipower_TessAI::read" title="Read Pricing Tool Data" sortOrder="10" />
+                    <resource id="Combipower_TessAI::write" title="Update Pricing Tool Data" sortOrder="20" />
                 </resource>
                 <resource id="Combipower_TessAI::config" title="TESS Pricing Tool Configuration" sortOrder="20" />
             </resource>

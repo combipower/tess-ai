@@ -27,4 +27,11 @@
             <resource ref="Combipower_TessAI::read" />
         </resources>
     </route>
+
+    <route url="/V1/tessAi/prices" method="POST">
+        <service class="Combipower\TessAI\Api\PriceUpdateManagementInterface" method="updatePrices" />
+        <resources>
+            <resource ref="Combipower_TessAI::write" />
+        </resources>
+    </route>
 </routes>
