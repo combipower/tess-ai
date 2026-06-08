@@ -410,7 +410,8 @@ Prices are written in the **default (admin) scope** (store 0). On a global price
       "price": 23.16,
       "special_price": 19.99,
       "special_from_date": "2026-06-10",
-      "special_to_date": "2026-06-20"
+      "special_to_date": "2026-06-20",
+      "extra_free": 2
     }
   ]
 }
@@ -423,6 +424,7 @@ Prices are written in the **default (admin) scope** (store 0). On a global price
 | `items[].special_price` | float | no | New special price (excl. VAT), must be ≥ 0 when present |
 | `items[].special_from_date` | string | no | Special-price start date. `Y-m-d` or `Y-m-d H:i:s`. Send `""` to clear; omit to leave unchanged |
 | `items[].special_to_date` | string | no | Special-price end date. Same format/semantics as `special_from_date` |
+| `items[].extra_free` | float | no | New `extra_free` value (≥ 0, `0` allowed). Omit to leave unchanged |
 
 ### Behaviour
 
@@ -430,6 +432,7 @@ Prices are written in the **default (admin) scope** (store 0). On a global price
 - Setting `price` flags the product with `has_tess_price = true`.
 - `special_price` is only changed when provided; omit it to leave it untouched.
 - `special_from_date` / `special_to_date`: **omit** (or send `null`) to leave the current date untouched, send `""` to **clear** the date, or send a valid `Y-m-d` / `Y-m-d H:i:s` value to set it. Invalid date format → that item fails with a message. A `special_price` with no dates applies immediately and never expires (standard Magento behaviour).
+- `extra_free` is only changed when provided (a non-negative number, `0` allowed); omit it to leave it untouched.
 - For configurable parents, `price` has no catalog effect (price comes from children) but the flag is still set — send child SKUs to change actual prices.
 
 ### Response

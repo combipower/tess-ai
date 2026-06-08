@@ -37,7 +37,10 @@ class AddExtraFreeAttribute implements DataPatchInterface
     {
         /** @var EavSetup $eavSetup */
         $eavSetup = $this->eavSetupFactory->create(['setup' => $this->moduleDataSetup]);
-
+        if ($eavSetup->getAttributeId(Product::ENTITY, self::ATTRIBUTE_CODE)) {
+            return $eavSetup->removeAttribute(Product::ENTITY, self::ATTRIBUTE_CODE);
+        }
+        
         $eavSetup->addAttribute(
             Product::ENTITY,
             self::ATTRIBUTE_CODE,
@@ -49,7 +52,7 @@ class AddExtraFreeAttribute implements DataPatchInterface
                 'required' => false,
                 'sort_order' => 100,
                 'global' => ScopedAttributeInterface::SCOPE_GLOBAL,
-                'group' => 'General',
+                'group' => 'TESS AI',
                 'visible' => true,
                 'user_defined' => true,
                 'default' => null,

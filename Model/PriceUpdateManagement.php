@@ -13,6 +13,8 @@ class PriceUpdateManagement implements PriceUpdateManagementInterface
 {
     private const HAS_TESS_PRICE_ATTRIBUTE_CODE = 'has_tess_price';
 
+    private const EXTRA_FREE_ATTRIBUTE_CODE = 'extra_free';
+
     /**
      * @var ProductRepositoryInterface
      */
@@ -109,6 +111,17 @@ class PriceUpdateManagement implements PriceUpdateManagementInterface
 
         $this->applyDate($product, 'special_from_date', $item->getSpecialFromDate(), $sku);
         $this->applyDate($product, 'special_to_date', $item->getSpecialToDate(), $sku);
+
+        $extraFree = $item->getExtraFree();
+        if ($extraFree !== null && $extraFree !== '') {
+            $normalizedExtraFree = $this->normalizePrice($extraFree);
+            if ($normalizedExtraFree === null) {
+                throw new LocalizedException(
+                    __('Invalid extra_free for SKU "%1". Must be a non-negative number.', $sku)
+                );
+            }
+            $product->setData(self::EXTRA_FREE_ATTRIBUTE_CODE, $normalizedExtraFree);
+        }
 
         $product->setData(self::HAS_TESS_PRICE_ATTRIBUTE_CODE, 1);
 

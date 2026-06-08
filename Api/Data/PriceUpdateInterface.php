@@ -8,6 +8,7 @@ interface PriceUpdateInterface
     public const SPECIAL_PRICE = 'special_price';
     public const SPECIAL_FROM_DATE = 'special_from_date';
     public const SPECIAL_TO_DATE = 'special_to_date';
+    public const EXTRA_FREE = 'extra_free';
 
     /**
      * @return string
@@ -33,6 +34,11 @@ interface PriceUpdateInterface
      * @return string|null
      */
     public function getSpecialToDate();
+
+    /**
+     * @return float|null
+     */
+    public function getExtraFree();
 
     /**
      * @param string $sku
@@ -63,4 +69,10 @@ interface PriceUpdateInterface
      * @return \Combipower\TessAI\Api\Data\PriceUpdateInterface
      */
     public function setSpecialToDate($specialToDate);
+
+    /**
+     * @param float|null $extraFree
+     * @return \Combipower\TessAI\Api\Data\PriceUpdateInterface
+     */
+    public function setExtraFree($extraFree);
 }
