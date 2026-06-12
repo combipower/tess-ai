@@ -219,6 +219,8 @@ The following filters are applied implicitly — disabled / hidden / unsupported
       "name": "D4E LEDEREN RIEM 50MM IN OLIEBRUIN TOPNERFLEER",
       "brand": "D4E",
       "delivery_time": "1-2 days",
+      "tess_brand": "D4E Premium",
+      "tess_delivery_time": "1-3 werkdagen",
       "product_type": "configurable",
       "price": [23.16],
       "special_price": null,
@@ -268,6 +270,8 @@ The following filters are applied implicitly — disabled / hidden / unsupported
 | `name` | string \| null | Product name (HTML stripped) |
 | `brand` | string \| null | Brand attribute value |
 | `delivery_time` | string \| null | Delivery time label |
+| `tess_brand` | string \| null | Raw value of the `tess_brand` product attribute |
+| `tess_delivery_time` | string \| null | Raw value of the `tess_delivery_time` product attribute |
 | `product_type` | string | `simple`, `configurable`, ... |
 | `price` | float[] | Simple: 1 element. Configurable: distinct child prices, ascending |
 | `special_price` | float \| null | Raw `special_price` attribute (date validity not enforced) |
@@ -411,7 +415,9 @@ Prices are written in the **default (admin) scope** (store 0). On a global price
       "special_price": 19.99,
       "special_from_date": "2026-06-10",
       "special_to_date": "2026-06-20",
-      "extra_free": 2
+      "extra_free": 2,
+      "tess_brand": "D4E Premium",
+      "tess_delivery_time": "1-3 werkdagen"
     }
   ]
 }
@@ -425,6 +431,8 @@ Prices are written in the **default (admin) scope** (store 0). On a global price
 | `items[].special_from_date` | string | no | Special-price start date. `Y-m-d` or `Y-m-d H:i:s`. Send `""` to clear; omit to leave unchanged |
 | `items[].special_to_date` | string | no | Special-price end date. Same format/semantics as `special_from_date` |
 | `items[].extra_free` | float | no | New `extra_free` value (≥ 0, `0` allowed). Omit to leave unchanged |
+| `items[].tess_brand` | string | no | New `tess_brand` value. Send `""` to clear; omit to leave unchanged |
+| `items[].tess_delivery_time` | string | no | New `tess_delivery_time` value. Send `""` to clear; omit to leave unchanged |
 
 ### Behaviour
 
@@ -433,6 +441,8 @@ Prices are written in the **default (admin) scope** (store 0). On a global price
 - `special_price` is only changed when provided; omit it to leave it untouched.
 - `special_from_date` / `special_to_date`: **omit** (or send `null`) to leave the current date untouched, send `""` to **clear** the date, or send a valid `Y-m-d` / `Y-m-d H:i:s` value to set it. Invalid date format → that item fails with a message. A `special_price` with no dates applies immediately and never expires (standard Magento behaviour).
 - `extra_free` is only changed when provided (a non-negative number, `0` allowed); omit it to leave it untouched.
+- `tess_delivery_time`: omit (or `null`) to leave unchanged, send `""` to clear, or send a string to set it (trimmed).
+- `tess_brand`: omit (or `null`) to leave unchanged, send `""` to clear the `tess_brand` text (the assigned brand is kept), or send a string to set it. **When `Amasty_ShopbyBrand` is installed**, the brand text is also matched against the configured brand attribute (`amshopby_brand/general/attribute_code`, e.g. `manufacture_brand`) — the option is found case-insensitively (trimmed) or **created if missing**, then assigned to the product. When the module is not installed, only the `tess_brand` text is stored.
 - For configurable parents, `price` has no catalog effect (price comes from children) but the flag is still set — send child SKUs to change actual prices.
 
 ### Response

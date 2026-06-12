@@ -15,6 +15,8 @@ class PriceUpdateManagement implements PriceUpdateManagementInterface
 
     private const EXTRA_FREE_ATTRIBUTE_CODE = 'extra_free';
 
+    private const TESS_BRAND_ATTRIBUTE_CODE = 'tess_brand';
+
     /**
      * @var ProductRepositoryInterface
      */
@@ -30,14 +32,21 @@ class PriceUpdateManagement implements PriceUpdateManagementInterface
      */
     private $logger;
 
+    /**
+     * @var ShopByBrandResolver
+     */
+    private $shopByBrandResolver;
+
     public function __construct(
         ProductRepositoryInterface $productRepository,
         PriceUpdateResultInterfaceFactory $resultFactory,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        ShopByBrandResolver $shopByBrandResolver
     ) {
         $this->productRepository = $productRepository;
         $this->resultFactory = $resultFactory;
         $this->logger = $logger;
+        $this->shopByBrandResolver = $shopByBrandResolver;
     }
 
     /**
@@ -123,6 +132,9 @@ class PriceUpdateManagement implements PriceUpdateManagementInterface
             $product->setData(self::EXTRA_FREE_ATTRIBUTE_CODE, $normalizedExtraFree);
         }
 
+        $this->applyBrand($product, $item->getTessBrand());
+        $this->applyText($product, 'tess_delivery_time', $item->getTessDeliveryTime());
+
         $product->setData(self::HAS_TESS_PRICE_ATTRIBUTE_CODE, 1);
 
         $this->productRepository->save($product);
@@ -161,6 +173,69 @@ class PriceUpdateManagement implements PriceUpdateManagementInterface
         }
 
         $product->setData($attributeCode, $normalized);
+    }
+
+    /**
+     * Apply the `tess_brand` text and, when Amasty Shop by Brand is installed,
+     * assign the real brand attribute too.
+     *
+     * - `null` (field omitted) → leave everything untouched.
+     * - empty string `''` → clear `tess_brand` only; the assigned brand is kept.
+     * - any other string → set `tess_brand`, then find-or-create the brand
+     *   option (case-insensitive) and assign it to the product's brand attribute.
+     *
+     * @param \Magento\Catalog\Api\Data\ProductInterface $product
+     * @param mixed $value
+     * @return void
+     */
+    private function applyBrand($product, $value)
+    {
+        if ($value === null) {
+            return;
+        }
+
+        $value = trim((string) $value);
+        $product->setData(self::TESS_BRAND_ATTRIBUTE_CODE, $value === '' ? null : $value);
+
+        if ($value === '') {
+            return;
+        }
+
+        if (!$this->shopByBrandResolver->isEnabled()) {
+            return;
+        }
+
+        $brandAttributeCode = $this->shopByBrandResolver->getBrandAttributeCode();
+        if ($brandAttributeCode === null) {
+            return;
+        }
+
+        $optionId = $this->shopByBrandResolver->getOrCreateOptionId($value);
+        if ($optionId !== null) {
+            $product->setData($brandAttributeCode, $optionId);
+        }
+    }
+
+    /**
+     * Apply a free-text attribute value to the product.
+     *
+     * - `null` (field omitted) → leave the current value untouched.
+     * - empty string `''` → clear the value.
+     * - any other string → set it (trimmed).
+     *
+     * @param \Magento\Catalog\Api\Data\ProductInterface $product
+     * @param string $attributeCode
+     * @param mixed $value
+     * @return void
+     */
+    private function applyText($product, $attributeCode, $value)
+    {
+        if ($value === null) {
+            return;
+        }
+
+        $value = trim((string) $value);
+        $product->setData($attributeCode, $value === '' ? null : $value);
     }
 
     /**

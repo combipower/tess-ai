@@ -36,6 +36,16 @@ class PriceUpdate extends AbstractSimpleObject implements PriceUpdateInterface
         return $this->_get(self::EXTRA_FREE);
     }
 
+    public function getTessBrand()
+    {
+        return $this->_get(self::TESS_BRAND);
+    }
+
+    public function getTessDeliveryTime()
+    {
+        return $this->_get(self::TESS_DELIVERY_TIME);
+    }
+
     public function setSku($sku)
     {
         return $this->setData(self::SKU, $sku);
@@ -64,5 +74,15 @@ class PriceUpdate extends AbstractSimpleObject implements PriceUpdateInterface
     public function setExtraFree($extraFree)
     {
         return $this->setData(self::EXTRA_FREE, $extraFree);
+    }
+
+    public function setTessBrand($tessBrand)
+    {
+        return $this->setData(self::TESS_BRAND, $tessBrand);
+    }
+
+    public function setTessDeliveryTime($tessDeliveryTime)
+    {
+        return $this->setData(self::TESS_DELIVERY_TIME, $tessDeliveryTime);
     }
 }

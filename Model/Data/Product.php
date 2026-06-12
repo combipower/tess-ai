@@ -56,6 +56,16 @@ class Product extends AbstractSimpleObject implements ProductInterface
         return $this->_get(self::DELIVERY_TIME);
     }
 
+    public function getTessBrand()
+    {
+        return $this->_get(self::TESS_BRAND);
+    }
+
+    public function getTessDeliveryTime()
+    {
+        return $this->_get(self::TESS_DELIVERY_TIME);
+    }
+
     public function getProductType()
     {
         return $this->_get(self::PRODUCT_TYPE);
@@ -139,6 +149,16 @@ class Product extends AbstractSimpleObject implements ProductInterface
     public function setDeliveryTime($deliveryTime)
     {
         return $this->setData(self::DELIVERY_TIME, $deliveryTime);
+    }
+
+    public function setTessBrand($tessBrand)
+    {
+        return $this->setData(self::TESS_BRAND, $tessBrand);
+    }
+
+    public function setTessDeliveryTime($tessDeliveryTime)
+    {
+        return $this->setData(self::TESS_DELIVERY_TIME, $tessDeliveryTime);
     }
 
     public function setProductType($productType)

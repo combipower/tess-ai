@@ -18,6 +18,10 @@ class ProductMapper
 
     private const HAS_TESS_PRICE_ATTRIBUTE_CODE = 'has_tess_price';
 
+    private const TESS_BRAND_ATTRIBUTE_CODE = 'tess_brand';
+
+    private const TESS_DELIVERY_TIME_ATTRIBUTE_CODE = 'tess_delivery_time';
+
     /**
      * @var ProductFactory
      */
@@ -188,6 +192,22 @@ class ProductMapper
             )
             ->setDeliveryTime(
                 $this->resolveDeliveryTime($catalogProduct)
+            )
+            ->setTessBrand(
+                $this->normalizeString(
+                    $this->attributeProvider->getProductAttributeValue(
+                        $catalogProduct,
+                        self::TESS_BRAND_ATTRIBUTE_CODE
+                    )
+                )
+            )
+            ->setTessDeliveryTime(
+                $this->normalizeString(
+                    $this->attributeProvider->getProductAttributeValue(
+                        $catalogProduct,
+                        self::TESS_DELIVERY_TIME_ATTRIBUTE_CODE
+                    )
+                )
             )
             ->setProductType($this->normalizeString($catalogProduct->getTypeId()))
             ->setPrice($priceValues)

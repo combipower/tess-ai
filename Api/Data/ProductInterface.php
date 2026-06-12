@@ -13,6 +13,8 @@ interface ProductInterface
     public const NAME = 'name';
     public const BRAND = 'brand';
     public const DELIVERY_TIME = 'delivery_time';
+    public const TESS_BRAND = 'tess_brand';
+    public const TESS_DELIVERY_TIME = 'tess_delivery_time';
     public const PRODUCT_TYPE = 'product_type';
     public const PRICE = 'price';
     public const SPECIAL_PRICE = 'special_price';
@@ -76,6 +78,20 @@ interface ProductInterface
      * @return string|null
      */
     public function getDeliveryTime();
+
+    /**
+     * Raw value of the `tess_brand` product attribute.
+     *
+     * @return string|null
+     */
+    public function getTessBrand();
+
+    /**
+     * Raw value of the `tess_delivery_time` product attribute.
+     *
+     * @return string|null
+     */
+    public function getTessDeliveryTime();
 
     /**
      * @return string|null
@@ -175,6 +191,18 @@ interface ProductInterface
      * @return \Combipower\TessAI\Api\Data\ProductInterface
      */
     public function setDeliveryTime($deliveryTime);
+
+    /**
+     * @param string|null $tessBrand
+     * @return \Combipower\TessAI\Api\Data\ProductInterface
+     */
+    public function setTessBrand($tessBrand);
+
+    /**
+     * @param string|null $tessDeliveryTime
+     * @return \Combipower\TessAI\Api\Data\ProductInterface
+     */
+    public function setTessDeliveryTime($tessDeliveryTime);
 
     /**
      * @param string|null $productType

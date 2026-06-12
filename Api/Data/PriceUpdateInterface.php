@@ -9,6 +9,8 @@ interface PriceUpdateInterface
     public const SPECIAL_FROM_DATE = 'special_from_date';
     public const SPECIAL_TO_DATE = 'special_to_date';
     public const EXTRA_FREE = 'extra_free';
+    public const TESS_BRAND = 'tess_brand';
+    public const TESS_DELIVERY_TIME = 'tess_delivery_time';
 
     /**
      * @return string
@@ -39,6 +41,16 @@ interface PriceUpdateInterface
      * @return float|null
      */
     public function getExtraFree();
+
+    /**
+     * @return string|null
+     */
+    public function getTessBrand();
+
+    /**
+     * @return string|null
+     */
+    public function getTessDeliveryTime();
 
     /**
      * @param string $sku
@@ -75,4 +87,16 @@ interface PriceUpdateInterface
      * @return \Combipower\TessAI\Api\Data\PriceUpdateInterface
      */
     public function setExtraFree($extraFree);
+
+    /**
+     * @param string|null $tessBrand
+     * @return \Combipower\TessAI\Api\Data\PriceUpdateInterface
+     */
+    public function setTessBrand($tessBrand);
+
+    /**
+     * @param string|null $tessDeliveryTime
+     * @return \Combipower\TessAI\Api\Data\PriceUpdateInterface
+     */
+    public function setTessDeliveryTime($tessDeliveryTime);
 }

@@ -142,6 +142,8 @@ class ProductManagement implements ProductManagementInterface
             'type_id',
             'extra_free',
             'has_tess_price',
+            'tess_brand',
+            'tess_delivery_time',
         ]);
         $collection->addAttributeToSelect(
             $this->attributeProvider->getExistingProductAttributes(array_merge(
