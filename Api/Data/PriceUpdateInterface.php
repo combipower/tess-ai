@@ -18,7 +18,7 @@ interface PriceUpdateInterface
     public function getSku();
 
     /**
-     * @return float
+     * @return float|null
      */
     public function getPrice();
 
@@ -59,7 +59,7 @@ interface PriceUpdateInterface
     public function setSku($sku);
 
     /**
-     * @param float $price
+     * @param float|null $price
      * @return \Combipower\TessAI\Api\Data\PriceUpdateInterface
      */
     public function setPrice($price);

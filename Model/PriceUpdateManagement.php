@@ -80,8 +80,10 @@ class PriceUpdateManagement implements PriceUpdateManagementInterface
     }
 
     /**
-     * Load the product in default scope, apply the new price (+ optional special
-     * price and validity dates), flag it as TESS-priced and persist.
+     * Load the product in default scope, apply whichever fields were provided
+     * (price, special price, validity dates, extra_free, tess brand/delivery)
+     * and persist. `price` is optional; when present the product is flagged as
+     * TESS-priced (`has_tess_price = 1`). At least one field must be provided.
      *
      * @param string $sku
      * @param \Combipower\TessAI\Api\Data\PriceUpdateInterface $item
@@ -94,18 +96,32 @@ class PriceUpdateManagement implements PriceUpdateManagementInterface
             throw new LocalizedException(__('SKU is required.'));
         }
 
-        $normalizedPrice = $this->normalizePrice($item->getPrice());
-        if ($normalizedPrice === null) {
-            throw new LocalizedException(
-                __('A valid non-negative price is required for SKU "%1".', $sku)
-            );
+        $price = $item->getPrice();
+        $hasPrice = ($price !== null && $price !== '');
+        $normalizedPrice = null;
+        if ($hasPrice) {
+            $normalizedPrice = $this->normalizePrice($price);
+            if ($normalizedPrice === null) {
+                throw new LocalizedException(
+                    __('A valid non-negative price is required for SKU "%1".', $sku)
+                );
+            }
+        }
+
+        if (!$this->hasAnyUpdate($item)) {
+            throw new LocalizedException(__('No fields to update for SKU "%1".', $sku));
         }
 
         // editMode=true returns an editable product, default store scope so the
         // price is written to the admin/default value (global price scope).
         $product = $this->productRepository->get($sku, true, Store::DEFAULT_STORE_ID, true);
         $product->setStoreId(Store::DEFAULT_STORE_ID);
-        $product->setPrice($normalizedPrice);
+
+        if ($hasPrice) {
+            $product->setPrice($normalizedPrice);
+            // Setting the price flags the product as TESS-managed.
+            $product->setData(self::HAS_TESS_PRICE_ATTRIBUTE_CODE, 1);
+        }
 
         $specialPrice = $item->getSpecialPrice();
         if ($specialPrice !== null && $specialPrice !== '') {
@@ -135,9 +151,26 @@ class PriceUpdateManagement implements PriceUpdateManagementInterface
         $this->applyBrand($product, $item->getTessBrand());
         $this->applyText($product, 'tess_delivery_time', $item->getTessDeliveryTime());
 
-        $product->setData(self::HAS_TESS_PRICE_ATTRIBUTE_CODE, 1);
-
         $this->productRepository->save($product);
+    }
+
+    /**
+     * Whether the item carries at least one field to update. A field counts as
+     * present when it is not null (empty string `''` is a deliberate clear, so
+     * it counts).
+     *
+     * @param \Combipower\TessAI\Api\Data\PriceUpdateInterface $item
+     * @return bool
+     */
+    private function hasAnyUpdate($item)
+    {
+        return $item->getPrice() !== null
+            || $item->getSpecialPrice() !== null
+            || $item->getSpecialFromDate() !== null
+            || $item->getSpecialToDate() !== null
+            || $item->getExtraFree() !== null
+            || $item->getTessBrand() !== null
+            || $item->getTessDeliveryTime() !== null;
     }
 
     /**
