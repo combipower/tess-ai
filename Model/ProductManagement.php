@@ -76,6 +76,11 @@ class ProductManagement implements ProductManagementInterface
      */
     private $dimensionFactory;
 
+    /**
+     * @var StockQtyResolver
+     */
+    private $stockQtyResolver;
+
     public function __construct(
         ProductCollectionFactory $productCollectionFactory,
         CatalogProductRepositoryInterface $productRepository,
@@ -85,7 +90,8 @@ class ProductManagement implements ProductManagementInterface
         ProductListFactory $productListFactory,
         PaginationMetaFactory $paginationMetaFactory,
         PriceTableResolver $priceTableResolver,
-        DimensionFactory $dimensionFactory
+        DimensionFactory $dimensionFactory,
+        StockQtyResolver $stockQtyResolver
     ) {
         $this->productCollectionFactory = $productCollectionFactory;
         $this->productRepository = $productRepository;
@@ -96,6 +102,7 @@ class ProductManagement implements ProductManagementInterface
         $this->paginationMetaFactory = $paginationMetaFactory;
         $this->priceTableResolver = $priceTableResolver;
         $this->dimensionFactory = $dimensionFactory;
+        $this->stockQtyResolver = $stockQtyResolver;
     }
 
     public function getList(
@@ -166,14 +173,6 @@ class ProductManagement implements ProductManagementInterface
             '{{table}}.stock_id=1',
             'left'
         );
-        $collection->joinField(
-            'is_in_stock',
-            'cataloginventory_stock_item',
-            'is_in_stock',
-            'product_id=entity_id',
-            '{{table}}.stock_id=1',
-            'left'
-        );
 
         $categoryIds = $this->normalizeCategoryIds($category_id);
         if (!empty($categoryIds)) {
@@ -204,9 +203,9 @@ class ProductManagement implements ProductManagementInterface
 
         $normalizedStock = strtolower((string) $stock);
         if (in_array($normalizedStock, ['1', 'true', 'in_stock', 'in-stock'], true)) {
-            $collection->addFieldToFilter('is_in_stock', 1);
+            $this->stockQtyResolver->applyInStockFilter($collection, true);
         } elseif (in_array($normalizedStock, ['0', 'false', 'out_of_stock', 'out-of-stock'], true)) {
-            $collection->addFieldToFilter('is_in_stock', 0);
+            $this->stockQtyResolver->applyInStockFilter($collection, false);
         }
 
         $this->joinPriceIndex($collection, (int) $store->getWebsiteId());

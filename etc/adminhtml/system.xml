@@ -56,6 +56,16 @@
                 </field>
             </group>
 
+            <group id="stock" translate="label" type="text" sortOrder="18" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>Stock</label>
+
+                <field id="legacy_fallback" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>MSI Legacy Fallback</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[Controls how the <code>stock</code> filter and <code>available_stock</code> value treat a SKU that has no <code>inventory_source_item</code> (MSI) rows. <b>No</b> (default): treat it as out of stock (pure MSI quantity). <b>Yes</b>: fall back to the legacy <code>cataloginventory_stock_item</code> qty (stock_id=1) for partially-migrated shops. Ignored when MSI is disabled (legacy qty is always used then).]]></comment>
+                </field>
+            </group>
+
             <group id="shipping_estimate" translate="label" type="text" sortOrder="20" showInDefault="1" showInWebsite="1" showInStore="1">
                 <label>Shipping Estimate</label>
 

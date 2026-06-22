@@ -1,8 +1,11 @@
 <?php
 namespace Combipower\TessAI\Model;
 
+use Magento\Catalog\Model\ResourceModel\Product\Collection as ProductCollection;
 use Magento\Framework\App\ResourceConnection;
+use Magento\Framework\DB\Select;
 use Magento\Framework\Module\Manager as ModuleManager;
+use Combipower\TessAI\Model\Config\StockFilter;
 
 /**
  * Resolve physical stock qty for a SKU.
@@ -27,6 +30,11 @@ class StockQtyResolver
     private $moduleManager;
 
     /**
+     * @var StockFilter
+     */
+    private $stockFilterConfig;
+
+    /**
      * @var array<string, float|null>
      */
     private $cache = [];
@@ -38,10 +46,12 @@ class StockQtyResolver
 
     public function __construct(
         ResourceConnection $resourceConnection,
-        ModuleManager $moduleManager
+        ModuleManager $moduleManager,
+        StockFilter $stockFilterConfig
     ) {
         $this->resourceConnection = $resourceConnection;
         $this->moduleManager = $moduleManager;
+        $this->stockFilterConfig = $stockFilterConfig;
     }
 
     /**
@@ -63,15 +73,96 @@ class StockQtyResolver
             ? $this->getMsiQty($sku)
             : $this->getLegacyQty($sku);
 
-        // MSI may report no row for SKUs that exist only in legacy storage —
-        // fall back so we never silently lose data on partially-migrated shops.
-        if ($qty === null && $this->isMsiEnabled()) {
+        // MSI may report no row for SKUs that exist only in legacy storage.
+        // Fall back to the legacy qty only when the admin opts in, so this value
+        // stays consistent with the `stock` filter (see applyInStockFilter()).
+        if ($qty === null
+            && $this->isMsiEnabled()
+            && $this->stockFilterConfig->isLegacyFallbackEnabled()
+        ) {
             $qty = $this->getLegacyQty($sku);
         }
 
         $this->cache[$sku] = $qty;
 
         return $qty;
+    }
+
+    /**
+     * Apply an in-stock / out-of-stock filter to a product collection using the
+     * same physical-qty logic as getQty():
+     *  - MSI enabled  → SUM(inventory_source_item.quantity) where status=1, per
+     *                   SKU; optionally COALESCE with the legacy qty when the
+     *                   admin enabled the legacy fallback.
+     *  - MSI disabled → legacy cataloginventory_stock_item.qty (stock_id=1).
+     *
+     * The effective qty defaults to 0 when no stock row exists, so a SKU with no
+     * (considered) inventory is treated as out of stock. Filtering happens at SQL
+     * level so pagination and getSize() stay correct.
+     *
+     * @param ProductCollection $collection
+     * @param bool $inStock True → keep qty > 0; false → keep qty <= 0.
+     * @return void
+     */
+    public function applyInStockFilter(ProductCollection $collection, $inStock)
+    {
+        $connection = $this->resourceConnection->getConnection();
+        $select = $collection->getSelect();
+        $msiTable = $this->resourceConnection->getTableName('inventory_source_item');
+
+        $useMsi = $this->isMsiEnabled() && $connection->isTableExists($msiTable);
+
+        if ($useMsi) {
+            $msiAggregate = $connection->select()
+                ->from(
+                    ['isi' => $msiTable],
+                    ['sku' => 'isi.sku', 'qty' => new \Zend_Db_Expr('SUM(isi.quantity)')]
+                )
+                ->where('isi.status = ?', 1)
+                ->group('isi.sku');
+            $select->joinLeft(
+                ['tess_msi_stock' => $msiAggregate],
+                'tess_msi_stock.sku = e.sku',
+                []
+            );
+
+            if ($this->stockFilterConfig->isLegacyFallbackEnabled()) {
+                $this->joinLegacyStock($select, $connection);
+                $effectiveQty = 'COALESCE(tess_msi_stock.qty, tess_legacy_stock.qty, 0)';
+            } else {
+                $effectiveQty = 'COALESCE(tess_msi_stock.qty, 0)';
+            }
+        } else {
+            $this->joinLegacyStock($select, $connection);
+            $effectiveQty = 'COALESCE(tess_legacy_stock.qty, 0)';
+        }
+
+        $select->where($inStock ? $effectiveQty . ' > 0' : $effectiveQty . ' <= 0');
+    }
+
+    /**
+     * Join the legacy default stock (stock_id=1) qty per product as
+     * `tess_legacy_stock`. Pre-aggregated to one row per product so it never
+     * multiplies the collection rows.
+     *
+     * @param Select $select
+     * @param \Magento\Framework\DB\Adapter\AdapterInterface $connection
+     * @return void
+     */
+    private function joinLegacyStock(Select $select, $connection)
+    {
+        $legacyTable = $this->resourceConnection->getTableName('cataloginventory_stock_item');
+        $legacyStock = $connection->select()
+            ->from(
+                ['csi' => $legacyTable],
+                ['product_id' => 'csi.product_id', 'qty' => 'csi.qty']
+            )
+            ->where('csi.stock_id = ?', self::LEGACY_STOCK_ID);
+        $select->joinLeft(
+            ['tess_legacy_stock' => $legacyStock],
+            'tess_legacy_stock.product_id = e.entity_id',
+            []
+        );
     }
 
     /**

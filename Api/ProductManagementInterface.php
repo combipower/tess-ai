@@ -15,7 +15,7 @@ interface ProductManagementInterface
      * @param mixed|null $brand_id Single value or array of values (OR).
      * @param mixed|null $sku Single value or array of values (OR-LIKE on SKU).
      * @param mixed|null $ean Single value or array of values (OR-LIKE).
-     * @param string|null $stock In-stock filter. Reads `cataloginventory_stock_item.is_in_stock` (legacy default-stock column). On shops with `Magento_InventoryApi` (MSI) the legacy table can drift from per-source quantities — this filter mirrors that legacy view, not the MSI-aware `available_stock` shown in the response.
+     * @param string|null $stock In-stock filter using the same physical-qty logic as `available_stock`: in-stock when qty > 0, out-of-stock when qty <= 0. MSI enabled → SUM(inventory_source_item.quantity) where status=1 per SKU (a SKU with no MSI rows is out-of-stock unless the "MSI Legacy Fallback" admin setting is on); MSI disabled → legacy cataloginventory_stock_item.qty (stock_id=1).
      * @param int $page
      * @param int $per_page
      * @param string|null $price_from Lower bound on sales price (excl. VAT), inclusive. Ignored if < 0.

@@ -24,6 +24,9 @@
                 <message_template/>
                 <days>0</days>
             </delivery_time>
+            <stock>
+                <legacy_fallback>0</legacy_fallback>
+            </stock>
         </combipower_tess_ai>
     </default>
 </config>
