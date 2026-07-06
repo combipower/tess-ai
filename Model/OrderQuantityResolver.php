@@ -11,6 +11,11 @@ class OrderQuantityResolver
      */
     private $resource;
 
+    /**
+     * @var array<int, float>
+     */
+    private $cache = [];
+
     public function __construct(ResourceConnection $resource)
     {
         $this->resource = $resource;
@@ -33,28 +38,60 @@ class OrderQuantityResolver
             return 0.0;
         }
 
+        if (!array_key_exists($productId, $this->cache)) {
+            $this->preload([$productId]);
+        }
+
+        return $this->cache[$productId] ?? 0.0;
+    }
+
+    /**
+     * Warm the request-scope cache for a set of product ids in one grouped
+     * query, so mapping a product list page does not run one aggregate per
+     * product. Ids with no matching order rows are cached as 0.0.
+     *
+     * @param int[] $productIds
+     * @return void
+     */
+    public function preload(array $productIds)
+    {
+        $missingIds = [];
+        foreach ($productIds as $productId) {
+            $productId = (int) $productId;
+            if ($productId > 0 && !array_key_exists($productId, $this->cache)) {
+                $missingIds[$productId] = $productId;
+            }
+        }
+
+        if (empty($missingIds)) {
+            return;
+        }
+
+        // Default first: a query failure must not leave ids uncached and
+        // trigger one retry per resolve() call.
+        foreach ($missingIds as $productId) {
+            $this->cache[$productId] = 0.0;
+        }
+
         try {
             $connection = $this->resource->getConnection();
             $orderItemTable = $this->resource->getTableName('sales_order_item');
             $orderTable = $this->resource->getTableName('sales_order');
 
             $select = $connection->select()
-                ->from(['oi' => $orderItemTable], [])
+                ->from(['oi' => $orderItemTable], ['product_id' => 'oi.product_id'])
                 ->joinInner(['o' => $orderTable], 'o.entity_id = oi.order_id', [])
-                ->where('oi.product_id = ?', $productId)
+                ->where('oi.product_id IN (?)', array_values($missingIds))
                 ->where('oi.parent_item_id IS NULL')
                 ->where('o.state != ?', Order::STATE_CANCELED)
-                ->columns(['ordered' => 'SUM(oi.qty_ordered - oi.qty_canceled - oi.qty_refunded)']);
+                ->columns(['ordered' => 'SUM(oi.qty_ordered - oi.qty_canceled - oi.qty_refunded)'])
+                ->group('oi.product_id');
 
-            $result = $connection->fetchOne($select);
+            foreach ($connection->fetchPairs($select) as $productId => $ordered) {
+                $this->cache[(int) $productId] = (float) $ordered;
+            }
         } catch (\Throwable $exception) {
-            return 0.0;
+            return;
         }
-
-        if ($result === false || $result === null) {
-            return 0.0;
-        }
-
-        return (float) $result;
     }
 }

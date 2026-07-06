@@ -89,6 +89,102 @@ class StockQtyResolver
     }
 
     /**
+     * Warm the request-scope cache for a set of SKUs with one grouped query
+     * (two when the legacy fallback applies), instead of one query per SKU
+     * when mapping a product list page. Mirrors getQty() semantics exactly:
+     * MSI sum where status=1, legacy qty only as opt-in fallback, null when
+     * the SKU has no considered stock row.
+     *
+     * @param string[] $skus
+     * @return void
+     */
+    public function preload(array $skus)
+    {
+        $missingSkus = [];
+        foreach ($skus as $sku) {
+            $sku = trim((string) $sku);
+            if ($sku !== '' && !array_key_exists($sku, $this->cache)) {
+                $missingSkus[$sku] = $sku;
+            }
+        }
+
+        if (empty($missingSkus)) {
+            return;
+        }
+
+        $resolved = $this->isMsiEnabled()
+            ? $this->fetchMsiQtys($missingSkus)
+            : [];
+
+        $needsLegacy = !$this->isMsiEnabled()
+            || $this->stockFilterConfig->isLegacyFallbackEnabled();
+        if ($needsLegacy) {
+            $legacySkus = array_diff_key($missingSkus, $resolved);
+            if (!empty($legacySkus)) {
+                $resolved += $this->fetchLegacyQtys($legacySkus);
+            }
+        }
+
+        foreach ($missingSkus as $sku) {
+            $this->cache[$sku] = array_key_exists($sku, $resolved) ? $resolved[$sku] : null;
+        }
+    }
+
+    /**
+     * @param array<string, string> $skus
+     * @return array<string, float>
+     */
+    private function fetchMsiQtys(array $skus)
+    {
+        $connection = $this->resourceConnection->getConnection();
+        $table = $this->resourceConnection->getTableName('inventory_source_item');
+        if (!$connection->isTableExists($table)) {
+            return [];
+        }
+
+        $select = $connection->select()
+            ->from($table, ['sku', 'qty_sum' => new \Zend_Db_Expr('SUM(quantity)')])
+            ->where('sku IN (?)', array_values($skus))
+            ->where('status = ?', 1)
+            ->group('sku');
+
+        $qtys = [];
+        foreach ($connection->fetchPairs($select) as $sku => $qty) {
+            $qtys[(string) $sku] = (float) $qty;
+        }
+
+        return $qtys;
+    }
+
+    /**
+     * @param array<string, string> $skus
+     * @return array<string, float>
+     */
+    private function fetchLegacyQtys(array $skus)
+    {
+        $connection = $this->resourceConnection->getConnection();
+        $stockItemTable = $this->resourceConnection->getTableName('cataloginventory_stock_item');
+        $productTable = $this->resourceConnection->getTableName('catalog_product_entity');
+
+        $select = $connection->select()
+            ->from(['csi' => $stockItemTable], ['qty' => 'csi.qty'])
+            ->join(
+                ['cpe' => $productTable],
+                'cpe.entity_id = csi.product_id',
+                ['sku' => 'cpe.sku']
+            )
+            ->where('cpe.sku IN (?)', array_values($skus))
+            ->where('csi.stock_id = ?', self::LEGACY_STOCK_ID);
+
+        $qtys = [];
+        foreach ($connection->fetchAll($select) as $row) {
+            $qtys[(string) $row['sku']] = (float) $row['qty'];
+        }
+
+        return $qtys;
+    }
+
+    /**
      * Apply an in-stock / out-of-stock filter to a product collection using the
      * same physical-qty logic as getQty():
      *  - MSI enabled  → SUM(inventory_source_item.quantity) where status=1, per

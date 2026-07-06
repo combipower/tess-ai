@@ -19,6 +19,8 @@
                 <city>Amsterdam</city>
                 <street>Dam 1</street>
                 <quote_attributes>weight,length,width,height</quote_attributes>
+                <subtotal_thresholds>350</subtotal_thresholds>
+                <rates_vary_by_qty>0</rates_vary_by_qty>
             </shipping_estimate>
             <delivery_time>
                 <message_template/>

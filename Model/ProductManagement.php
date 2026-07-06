@@ -236,9 +236,15 @@ class ProductManagement implements ProductManagementInterface
         $collection->setCurPage($page);
         $collection->setPageSize($perPage);
         $collection->addTierPriceData();
+        // Loads all category ids in one query on load; without this the mapper
+        // lazy-loads them one query per product.
+        $collection->addCategoryIds();
+
+        $catalogProducts = $collection->getItems();
+        $this->productMapper->preload($catalogProducts);
 
         $items = [];
-        foreach ($collection as $catalogProduct) {
+        foreach ($catalogProducts as $catalogProduct) {
             $items[] = $this->productMapper->map($catalogProduct, $categoryIds);
         }
 

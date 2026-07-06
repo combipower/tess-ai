@@ -76,6 +76,17 @@
                     <comment><![CDATA[Product attributes loaded into the temporary quote used to estimate <code>shipping_cost</code>. Carrier table rates and shipping restriction rules often depend on dimensions/weight (e.g. <code>length</code>, <code>width</code>, <code>height</code>, <code>weight</code>). If they are not loaded the quote sees empty values and may pick a cheaper method than real checkout. Default: weight + dimensions.]]></comment>
                 </field>
 
+                <field id="subtotal_thresholds" translate="label comment" type="text" sortOrder="7" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Shipping Subtotal Thresholds</label>
+                    <comment><![CDATA[Comma-separated subtotal boundaries that shipping rates or restriction rules compare against (e.g. a free-shipping-above-&euro;350 rule &rarr; <code>350</code>). Products in the same subtotal band share one <code>shipping_cost</code> estimate, which keeps the products API fast. Must list EVERY subtotal boundary the shipping rules read; leave empty to estimate per distinct price (accurate for unknown rules, but slow).]]></comment>
+                </field>
+
+                <field id="rates_vary_by_qty" translate="label comment" type="select" sortOrder="8" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Shipping Rates Vary By Quantity</label>
+                    <source_model>Magento\Config\Model\Config\Source\Yesno</source_model>
+                    <comment><![CDATA[Set to <b>Yes</b> when any table rate uses qty or weight brackets, or per-item/per-weight cost multipliers &mdash; each sale-unit quantity is then estimated separately (accurate but slow). Set to <b>No</b> when every rate row is a flat base cost (subtotal thresholds above still apply), so all quantities of a product share one <code>shipping_cost</code> estimate.]]></comment>
+                </field>
+
                 <field id="country_id" translate="label comment" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
                     <label>Default Shipping Country</label>
                     <source_model>Magento\Directory\Model\Config\Source\Country</source_model>

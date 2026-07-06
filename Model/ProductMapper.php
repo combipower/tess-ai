@@ -102,6 +102,43 @@ class ProductMapper
     }
 
     /**
+     * Warm the per-product resolver caches (stock qty, ordered qty) for a page
+     * of products with one bulk query each, so the map() loop does not run one
+     * query per product. Optional: map() stays correct without it, just slower.
+     *
+     * @param Product[] $catalogProducts
+     * @return void
+     */
+    public function preload(array $catalogProducts)
+    {
+        $skus = [];
+        $productIds = [];
+        foreach ($catalogProducts as $catalogProduct) {
+            if (!$catalogProduct instanceof Product) {
+                continue;
+            }
+
+            $sku = trim((string) $catalogProduct->getSku());
+            if ($sku !== '') {
+                $skus[] = $sku;
+            }
+
+            $productId = (int) $catalogProduct->getId();
+            if ($productId > 0) {
+                $productIds[] = $productId;
+            }
+        }
+
+        if (!empty($skus)) {
+            $this->stockQtyResolver->preload($skus);
+        }
+
+        if (!empty($productIds)) {
+            $this->orderQuantityResolver->preload($productIds);
+        }
+    }
+
+    /**
      * @param Product $catalogProduct
      * @param mixed $forcedCategoryId
      * @return ProductInterface

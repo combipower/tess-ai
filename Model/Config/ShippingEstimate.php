@@ -15,6 +15,8 @@ class ShippingEstimate
     public const XML_PATH_STREET = 'combipower_tess_ai/shipping_estimate/street';
     public const XML_PATH_SHIPPING_METHOD = 'combipower_tess_ai/shipping_estimate/shipping_method';
     public const XML_PATH_QUOTE_ATTRIBUTES = 'combipower_tess_ai/shipping_estimate/quote_attributes';
+    public const XML_PATH_SUBTOTAL_THRESHOLDS = 'combipower_tess_ai/shipping_estimate/subtotal_thresholds';
+    public const XML_PATH_RATES_VARY_BY_QTY = 'combipower_tess_ai/shipping_estimate/rates_vary_by_qty';
 
     /**
      * @var ScopeConfigInterface
@@ -122,6 +124,54 @@ class ShippingEstimate
     }
 
     /**
+     * Subtotal boundaries (sorted floats) that shipping rates or restriction
+     * rules compare the row subtotal against (e.g. a "free shipping above 350"
+     * rule → `350`). Products whose subtotal falls in the same band share one
+     * shipping estimate, so the resolver does not have to collect totals per
+     * distinct price. Empty → every price is treated as rate-distinct (safe,
+     * slow). Must list EVERY subtotal boundary the shipping rules read.
+     *
+     * @return float[]
+     */
+    public function getSubtotalThresholds()
+    {
+        $value = $this->getConfiguredString(self::XML_PATH_SUBTOTAL_THRESHOLDS);
+        if ($value === null) {
+            return [];
+        }
+
+        $thresholds = [];
+        foreach (explode(',', $value) as $part) {
+            $part = trim($part);
+            if ($part !== '' && is_numeric($part)) {
+                $threshold = (float) $part;
+                $thresholds[sprintf('%.4F', $threshold)] = $threshold;
+            }
+        }
+
+        sort($thresholds);
+        return array_values($thresholds);
+    }
+
+    /**
+     * Whether shipping rates read the item quantity beyond the subtotal (qty
+     * or package-weight brackets, per-item/per-weight cost multipliers). When
+     * disabled, one estimate is shared across sale-unit quantities as long as
+     * the subtotal band and product attributes match. Enabled is the safe
+     * default; disable only when every rate row is a flat base cost.
+     *
+     * @return bool
+     */
+    public function isRateQtyDependent()
+    {
+        return $this->scopeConfig->isSetFlag(
+            self::XML_PATH_RATES_VARY_BY_QTY,
+            ScopeInterface::SCOPE_STORE,
+            $this->resolveStoreId()
+        );
+    }
+
+    /**
      * @return string
      */
     public function getCacheKey()
@@ -135,6 +185,8 @@ class ShippingEstimate
             $this->getStreet(),
             $this->getShippingMethod(),
             implode(',', $this->getQuoteAttributeCodes()),
+            implode(',', array_map('strval', $this->getSubtotalThresholds())),
+            $this->isRateQtyDependent() ? '1' : '0',
         ]);
     }
 
