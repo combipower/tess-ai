@@ -22,6 +22,7 @@ interface ProductInterface
     public const CATEGORY_ID = 'category_id';
     public const SALE_UNITS = 'sale_units';
     public const ADDITIONAL_ATTRIBUTES = 'additional_attributes';
+    public const CHANNABLE_STATUS = 'channable_status';
 
     /**
      * @return string|null
@@ -131,6 +132,14 @@ interface ProductInterface
      * @return \Combipower\TessAI\Api\Data\AdditionalAttributeInterface[]
      */
     public function getAdditionalAttributes();
+
+    /**
+     * Channable push state of this product: `not_listed`, `excluded`, `failed`,
+     * `pending` or `synced`. Null when the Channable module is unavailable.
+     *
+     * @return string|null
+     */
+    public function getChannableStatus();
 
     /**
      * @param string $id
@@ -245,4 +254,10 @@ interface ProductInterface
      * @return \Combipower\TessAI\Api\Data\ProductInterface
      */
     public function setAdditionalAttributes(array $additionalAttributes);
+
+    /**
+     * @param string|null $channableStatus
+     * @return \Combipower\TessAI\Api\Data\ProductInterface
+     */
+    public function setChannableStatus($channableStatus);
 }

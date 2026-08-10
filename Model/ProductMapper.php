@@ -73,6 +73,11 @@ class ProductMapper
     private $stockQtyResolver;
 
     /**
+     * @var ChannableStatusResolver
+     */
+    private $channableStatusResolver;
+
+    /**
      * @var array<int, Product[]>
      */
     private $configurableChildrenCache = [];
@@ -87,7 +92,8 @@ class ProductMapper
         ShippingCostResolver $shippingCostResolver,
         DeliveryTimeProviderInterface $deliveryTimeProvider,
         OrderQuantityResolver $orderQuantityResolver,
-        StockQtyResolver $stockQtyResolver
+        StockQtyResolver $stockQtyResolver,
+        ChannableStatusResolver $channableStatusResolver
     ) {
         $this->productFactory = $productFactory;
         $this->saleUnitFactory = $saleUnitFactory;
@@ -99,6 +105,7 @@ class ProductMapper
         $this->deliveryTimeProvider = $deliveryTimeProvider;
         $this->orderQuantityResolver = $orderQuantityResolver;
         $this->stockQtyResolver = $stockQtyResolver;
+        $this->channableStatusResolver = $channableStatusResolver;
     }
 
     /**
@@ -135,6 +142,7 @@ class ProductMapper
 
         if (!empty($productIds)) {
             $this->orderQuantityResolver->preload($productIds);
+            $this->channableStatusResolver->preload($productIds);
         }
     }
 
@@ -254,7 +262,21 @@ class ProductMapper
             ->setSaleUnits($saleUnits)
             ->setAdditionalAttributes(
                 $this->attributeProvider->buildAdditionalAttributes($catalogProduct)
-            );
+            )
+            ->setChannableStatus($this->resolveChannableStatus($catalogProduct));
+    }
+
+    /**
+     * @param Product $catalogProduct
+     * @return string|null
+     */
+    private function resolveChannableStatus(Product $catalogProduct)
+    {
+        try {
+            return $this->channableStatusResolver->getStatus((int) $catalogProduct->getId());
+        } catch (\Throwable $exception) {
+            return null;
+        }
     }
 
     /**

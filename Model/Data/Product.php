@@ -101,6 +101,11 @@ class Product extends AbstractSimpleObject implements ProductInterface
         return $this->_get(self::ADDITIONAL_ATTRIBUTES);
     }
 
+    public function getChannableStatus()
+    {
+        return $this->_get(self::CHANNABLE_STATUS);
+    }
+
     public function setId($id)
     {
         return $this->setData(self::ID, $id);
@@ -194,5 +199,10 @@ class Product extends AbstractSimpleObject implements ProductInterface
     public function setAdditionalAttributes(array $additionalAttributes)
     {
         return $this->setData(self::ADDITIONAL_ATTRIBUTES, $additionalAttributes);
+    }
+
+    public function setChannableStatus($channableStatus)
+    {
+        return $this->setData(self::CHANNABLE_STATUS, $channableStatus);
     }
 }

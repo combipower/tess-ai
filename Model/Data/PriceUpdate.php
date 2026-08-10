@@ -46,6 +46,11 @@ class PriceUpdate extends AbstractSimpleObject implements PriceUpdateInterface
         return $this->_get(self::TESS_DELIVERY_TIME);
     }
 
+    public function getBolPrice()
+    {
+        return $this->_get(self::BOL_PRICE);
+    }
+
     public function setSku($sku)
     {
         return $this->setData(self::SKU, $sku);
@@ -84,5 +89,10 @@ class PriceUpdate extends AbstractSimpleObject implements PriceUpdateInterface
     public function setTessDeliveryTime($tessDeliveryTime)
     {
         return $this->setData(self::TESS_DELIVERY_TIME, $tessDeliveryTime);
+    }
+
+    public function setBolPrice($bolPrice)
+    {
+        return $this->setData(self::BOL_PRICE, $bolPrice);
     }
 }

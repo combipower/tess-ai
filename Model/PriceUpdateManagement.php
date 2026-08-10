@@ -17,6 +17,8 @@ class PriceUpdateManagement implements PriceUpdateManagementInterface
 
     private const TESS_BRAND_ATTRIBUTE_CODE = 'tess_brand';
 
+    private const BOL_PRICE_ATTRIBUTE_CODE = 'bol_price';
+
     /**
      * @var ProductRepositoryInterface
      */
@@ -81,9 +83,10 @@ class PriceUpdateManagement implements PriceUpdateManagementInterface
 
     /**
      * Load the product in default scope, apply whichever fields were provided
-     * (price, special price, validity dates, extra_free, tess brand/delivery)
-     * and persist. `price` is optional; when present the product is flagged as
-     * TESS-priced (`has_tess_price = 1`). At least one field must be provided.
+     * (price, special price, validity dates, extra_free, bol_price, tess
+     * brand/delivery) and persist. `price` is optional; when present the product
+     * is flagged as TESS-priced (`has_tess_price = 1`). At least one field must
+     * be provided.
      *
      * @param string $sku
      * @param \Combipower\TessAI\Api\Data\PriceUpdateInterface $item
@@ -148,6 +151,7 @@ class PriceUpdateManagement implements PriceUpdateManagementInterface
             $product->setData(self::EXTRA_FREE_ATTRIBUTE_CODE, $normalizedExtraFree);
         }
 
+        $this->applyPrice($product, self::BOL_PRICE_ATTRIBUTE_CODE, $item->getBolPrice(), $sku);
         $this->applyBrand($product, $item->getTessBrand());
         $this->applyText($product, 'tess_delivery_time', $item->getTessDeliveryTime());
 
@@ -170,7 +174,43 @@ class PriceUpdateManagement implements PriceUpdateManagementInterface
             || $item->getSpecialToDate() !== null
             || $item->getExtraFree() !== null
             || $item->getTessBrand() !== null
-            || $item->getTessDeliveryTime() !== null;
+            || $item->getTessDeliveryTime() !== null
+            || $item->getBolPrice() !== null;
+    }
+
+    /**
+     * Apply an optional price attribute to the product.
+     *
+     * - `null` (field omitted) → leave the current value untouched.
+     * - empty string `''` → clear the override.
+     * - a non-negative number → set it.
+     *
+     * @param \Magento\Catalog\Api\Data\ProductInterface $product
+     * @param string $attributeCode
+     * @param mixed $value
+     * @param string $sku
+     * @return void
+     * @throws LocalizedException
+     */
+    private function applyPrice($product, $attributeCode, $value, $sku)
+    {
+        if ($value === null) {
+            return;
+        }
+
+        if ($value === '') {
+            $product->setData($attributeCode, null);
+            return;
+        }
+
+        $normalized = $this->normalizePrice($value);
+        if ($normalized === null) {
+            throw new LocalizedException(
+                __('Invalid "%1" for SKU "%2". Must be a non-negative number.', $attributeCode, $sku)
+            );
+        }
+
+        $product->setData($attributeCode, $normalized);
     }
 
     /**

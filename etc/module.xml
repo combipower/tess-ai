@@ -9,6 +9,7 @@
             <module name="Magento_Shipping" />
             <module name="Magento_Tax" />
             <module name="Magento_Webapi" />
+            <module name="Magmodules_Channable" />
         </sequence>
     </module>
 </config>

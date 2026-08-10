@@ -17,4 +17,14 @@
     <preference for="Combipower\TessAI\Api\Data\ProductListInterface" type="Combipower\TessAI\Model\Data\ProductList" />
     <preference for="Combipower\TessAI\Api\Data\PriceUpdateInterface" type="Combipower\TessAI\Model\Data\PriceUpdate" />
     <preference for="Combipower\TessAI\Api\Data\PriceUpdateResultInterface" type="Combipower\TessAI\Model\Data\PriceUpdateResult" />
+
+    <type name="Magmodules\Channable\Model\Collection\Products">
+        <plugin name="combipower_tessai_channable_product_attributes"
+                type="Combipower\TessAI\Plugin\Channable\ProductAttributesPlugin" />
+    </type>
+
+    <type name="Magmodules\Channable\Service\Product\PriceData">
+        <plugin name="combipower_tessai_channable_bol_price"
+                type="Combipower\TessAI\Plugin\Channable\PriceDataPlugin" />
+    </type>
 </config>

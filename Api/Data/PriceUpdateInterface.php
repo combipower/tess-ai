@@ -11,6 +11,7 @@ interface PriceUpdateInterface
     public const EXTRA_FREE = 'extra_free';
     public const TESS_BRAND = 'tess_brand';
     public const TESS_DELIVERY_TIME = 'tess_delivery_time';
+    public const BOL_PRICE = 'bol_price';
 
     /**
      * @return string
@@ -51,6 +52,11 @@ interface PriceUpdateInterface
      * @return string|null
      */
     public function getTessDeliveryTime();
+
+    /**
+     * @return float|null
+     */
+    public function getBolPrice();
 
     /**
      * @param string $sku
@@ -99,4 +105,10 @@ interface PriceUpdateInterface
      * @return \Combipower\TessAI\Api\Data\PriceUpdateInterface
      */
     public function setTessDeliveryTime($tessDeliveryTime);
+
+    /**
+     * @param float|null $bolPrice
+     * @return \Combipower\TessAI\Api\Data\PriceUpdateInterface
+     */
+    public function setBolPrice($bolPrice);
 }

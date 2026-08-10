@@ -2,6 +2,12 @@
 
 Base Magento 2 module for the Combipower TESS AI REST integration.
 
+Full endpoint/field reference lives in [API.md](API.md); this file covers installation and configuration.
+
+## Requirements
+
+- `Magmodules_Channable` (`magmodules/magento2-channable`) — required. The module plugs into Channable to override the exported price (`bol_price`) and to report the push status (`channable_status`).
+
 ## Exposed endpoints
 
 - `GET /rest/<store_code>/V1/tessAi/categories`
@@ -23,6 +29,20 @@ The admin configuration section uses:
 
 Use an integration token or admin token with the required permission.
 
+## Product attributes
+
+Created by data patches under `Setup/Patch/Data`, all global scope and grouped under **TESS AI** on the product form:
+
+| Attribute | Type | Purpose |
+|---|---|---|
+| `has_tess_price` | boolean | Set to `1` whenever `POST /prices` writes a `price` |
+| `extra_free` | decimal | Free-quantity value exposed per sale unit |
+| `tess_brand` | varchar | Brand text from TESS; also resolves/creates the Amasty Shop by Brand option when that module is installed |
+| `tess_delivery_time` | varchar | Delivery time text from TESS |
+| `bol_price` | decimal | Overrides the price exported to Channable — see below |
+
+All five are writable through `POST /V1/tessAi/prices` and readable through the product endpoints.
+
 ## Attribute Mapping Configuration
 
 Product attribute codes used by the API are configurable in Admin:
@@ -30,6 +50,47 @@ Product attribute codes used by the API are configurable in Admin:
 - `Stores > Configuration > Combipower > TESS AI > Attribute Mapping`
 
 The module reads attribute codes from this configuration per store scope instead of hardcoded codes.
+
+## Channable Integration
+
+### `bol_price` — price override
+
+Marketplace prices differ from the Magento catalog price. Setting `bol_price` on a product replaces the price Channable exports, without touching the catalog price customers see on the storefront.
+
+- Stored **excluding VAT**, the same basis as the regular `price` attribute.
+- Active only when the value is `> 0`. Empty, `0` or negative means "no override" and the catalog price is exported.
+- Applies to **both** Channable channels: the pull feed and the incremental item-update webhook. Both read the same `price` key, which is rewritten by `Plugin\Channable\PriceDataPlugin` (an `after` plugin on `Magmodules\Channable\Service\Product\PriceData::execute`).
+- Discount fields (`sale_price`, `sale_price_effective_date`, discount percentage) are dropped from the export, because a bol price is treated as final. Leaving them would make Channable render a discount against a different base.
+- The override applies to **every** Channable channel, not just Bol — the item-update webhook has a fixed payload schema with a single `price` field, so a per-channel override is not possible through that path.
+
+`Plugin\Channable\ProductAttributesPlugin` appends `bol_price` to the attribute list Channable selects on its collections. Without it the attribute would be absent from the loaded products and the override would silently never fire.
+
+**Configurable products:** Channable exports configurables through their child variants (`magmodules_channable/types/configurable = simple`), so `bol_price` must be set on the **child SKU**. Setting it on the parent has no effect on what is pushed.
+
+### `channable_status` — push status
+
+The product endpoints expose a read-only `channable_status` field. Nothing is persisted: `Model\ChannableStatusResolver` derives it per request from Channable itself, so the value never goes stale.
+
+| Value | Meaning |
+|---|---|
+| `not_listed` | Does not match the Channable feed filters (category / type / status) |
+| `excluded` | Listed, but flagged `exclude_for_update` in Channable's item grid |
+| `failed` | Last push was rejected by Channable or failed at transport level |
+| `pending` | Listed and waiting — never pulled yet, or `needs_update = 1` |
+| `synced` | Listed and up to date |
+
+Evaluated top-down, first match wins. The field is omitted entirely when `Magmodules_Channable` is disabled.
+
+Two queries per response page:
+
+1. `Magmodules\Channable\Model\Collection\Products::getCollection()` narrowed to the page's ids, read through `getAllIds()` — reusing Channable's own filters instead of re-implementing them keeps this in step with Channable upgrades.
+2. A primary-key lookup on `channable_items`. That table has no index on `id`, but Channable derives `item_id` as the store id concatenated with the zero-padded product id, so the ids are rebuilt and matched on the primary key.
+
+### Known limitation
+
+`Magmodules\Channable\Model\Collection\Products::joinPriceIndexLeft()` hardcodes the `catalog_product_index_price` table name. On a shop running `indexer/catalog_product_price/dimensions_mode = website` the real data lives in `catalog_product_index_price_ws<id>`, so `final_price` / `min_price` / `max_price` come back `NULL`.
+
+Simple products are unaffected — Channable falls back to `Product::getFinalPrice()`. Configurable products are exported with price `0.00`, because `PriceData::execute()` zeroes the price when `final_price` is null. Setting `bol_price` masks the problem for that product; configurables without an override remain affected.
 
 ## Shipping Cost Configuration
 
@@ -75,3 +136,5 @@ php bin/magento setup:upgrade
 php bin/magento setup:di:compile
 php bin/magento cache:flush
 ```
+
+Run `setup:upgrade` **before** `setup:di:compile`: the Channable plugin selects `bol_price` on the product collection, and the attribute has to exist by then.

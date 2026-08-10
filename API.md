@@ -181,9 +181,9 @@ The following filters are applied implicitly — disabled / hidden / unsupported
 | `sort_order` | string | `desc` | `asc` or `desc` (case-insensitive). Ignored when `sort_by` is missing or unknown. Any other value falls back to `desc`. |
 | `page` | int | `1` | Min 1 |
 | `per_page` | int | `50` | Min 1, max 200 (clamped) |
-| `attr[code]` | string / string[] | — | Filter by any extra attribute configured in Admin → Combipower → TESS AI → Additional Attributes. Operator is auto-selected: `varchar` / `text` → `LIKE %v%`, all other backends and source-using attributes (select/multiselect) → exact match. Codes not in the Additional Attributes list are ignored. |
+| `attr[code]` | string | — | Filter by any extra attribute configured in Admin → Combipower → TESS AI → Additional Attributes. Operator is auto-selected: `varchar` / `text` → `LIKE %v%`, all other backends and source-using attributes (select/multiselect) → exact match. Codes not in the Additional Attributes list are ignored. |
 
-**Multi-value filters.** `supplier_id`, `brand_id`, `sku`, `ean`, and every `attr[code]` accept either a single scalar or a repeated/array syntax. Multiple values are OR-joined (exact attributes → SQL `IN`; LIKE attributes → `OR LIKE`). Single-value syntax stays backwards-compatible.
+**Multi-value filters.** `category_id`, `supplier_id`, `brand_id`, `sku` and `ean` accept either a single scalar or a repeated/array syntax. Multiple values are OR-joined (exact attributes → SQL `IN`; LIKE attributes → `OR LIKE`). Single-value syntax stays backwards-compatible.
 
 ```
 # single
@@ -193,8 +193,9 @@ The following filters are applied implicitly — disabled / hidden / unsupported
 # multi (OR)
 ?supplier_id[]=10&supplier_id[]=11
 ?ean[]=871&ean[]=872
-?attr[color][]=red&attr[color][]=blue
 ```
+
+> **`attr[code]` is single-value only.** The service contract declares `$attr` as `string[]`, so Magento casts every element with `settype(..., 'string')`. An array element becomes the literal string `"Array"` (plus an *Array to string conversion* warning in the log), and the filter matches nothing. Send one value per attribute: `?attr[color]=red`. Repeated syntax (`?attr[color][]=red&attr[color][]=blue`) needs the parameter type widened to `mixed` first — the same type the working multi-value filters above already use.
 
 **Pagination stability:** results are always tie-broken by `entity_id ASC` as a secondary sort, so paging is deterministic even when many rows share the same `sort_by` value.
 
@@ -250,7 +251,8 @@ The following filters are applied implicitly — disabled / hidden / unsupported
         { "code": "color",    "value": "Black"   },
         { "code": "material", "value": "Leather" },
         { "code": "weight",   "value": "0.450"   }
-      ]
+      ],
+      "channable_status": "synced"
     }
   ]
 }
@@ -278,6 +280,7 @@ The following filters are applied implicitly — disabled / hidden / unsupported
 | `order_number` | float | Total ordered qty across non-canceled orders (`qty_ordered − qty_canceled − qty_refunded`) |
 | `category_id` | string \| null | Matches the requested `category_id`, otherwise the product's first category |
 | `sale_units` | array | See below |
+| `channable_status` | string \| null | Channable push state: `not_listed`, `excluded`, `failed`, `pending`, `synced`. Omitted when `Magmodules_Channable` is unavailable. See below |
 | `additional_attributes` | array | List of `{code, value}` pairs for extra attributes configured in Admin → Combipower → TESS AI → Additional Attributes. Values are string-cast (numbers / multi-select labels rendered as strings) for stable JSON marshalling. Empty array `[]` when nothing is configured or all values are blank. |
 
 ### SaleUnit fields
@@ -300,6 +303,20 @@ The following filters are applied implicitly — disabled / hidden / unsupported
 | `available_stock` | float \| null | Raw physical stock qty (**not** salable qty). When `Magento_InventoryApi` is enabled, this is `SUM(inventory_source_item.quantity)` across all sources where `status=1`; a SKU with no MSI rows returns `null` unless *MSI Legacy Fallback* (Admin → Combipower → TESS AI → Stock) is enabled, which falls back to `cataloginventory_stock_item.qty` (stock_id=1). When MSI is disabled the legacy qty is always used. Reservations are NOT subtracted. |
 | `extra_free` | float \| null | Raw value of the `extra_free` decimal product attribute. Simple/virtual: taken from the product itself (same value on every sale unit). Configurable: taken from each child variant. `null` when unset/empty. |
 | `has_tess_price` | bool | Value of the `has_tess_price` Yes/No product attribute. Simple/virtual: taken from the product itself. Configurable: taken from each child variant. Defaults to `false` when unset. |
+
+### `channable_status`
+
+Derived on read from Channable — nothing is stored on the product, so the value always reflects the current state. Evaluated top-down, first match wins:
+
+| Value | Meaning |
+|---|---|
+| `not_listed` | The product does not match the Channable feed filters (category / type / status), so it is never exported |
+| `excluded` | Listed, but flagged `exclude_for_update` in Channable's item grid |
+| `failed` | The last push was rejected by Channable or failed at transport level (401, 5xx, item-level error) |
+| `pending` | Listed and waiting — either Channable has not pulled it yet, or local changes have not been pushed (`needs_update = 1`) |
+| `synced` | Listed and up to date; Channable holds the current data |
+
+The field is **omitted entirely** when `Magmodules_Channable` is not installed or disabled.
 
 ### Examples
 
@@ -343,10 +360,6 @@ curl -s -H "Authorization: Bearer $TOKEN" \
 # Filter by an extra (additional) attribute
 curl -s -H "Authorization: Bearer $TOKEN" \
   "$BASE/rest/V1/tessAi/products?attr%5Bcolor%5D=red&attr%5Bmaterial%5D=steel"
-
-# Multi-value on additional attribute (OR)
-curl -s -H "Authorization: Bearer $TOKEN" \
-  "$BASE/rest/V1/tessAi/products?attr%5Bcolor%5D%5B%5D=red&attr%5Bcolor%5D%5B%5D=blue"
 ```
 
 ### Paginate all results
@@ -417,7 +430,8 @@ Prices are written in the **default (admin) scope** (store 0). On a global price
       "special_to_date": "2026-06-20",
       "extra_free": 2,
       "tess_brand": "D4E Premium",
-      "tess_delivery_time": "1-3 werkdagen"
+      "tess_delivery_time": "1-3 werkdagen",
+      "bol_price": 21.5
     }
   ]
 }
@@ -433,17 +447,20 @@ Prices are written in the **default (admin) scope** (store 0). On a global price
 | `items[].extra_free` | float | no | New `extra_free` value (≥ 0, `0` allowed). Omit to leave unchanged |
 | `items[].tess_brand` | string | no | New `tess_brand` value. Send `""` to clear; omit to leave unchanged |
 | `items[].tess_delivery_time` | string | no | New `tess_delivery_time` value. Send `""` to clear; omit to leave unchanged |
+| `items[].bol_price` | float | no | Price pushed to Channable instead of the catalog price (excl. VAT, must be ≥ 0). Send `""` to clear the override; omit to leave unchanged |
 
 ### Behaviour
 
 - **Per-item processing:** a failing SKU does not abort the batch — its result row carries `success: false` and a `message`.
-- `price` is **optional**. At least one updatable field (`price`, `special_price`, `special_from_date`, `special_to_date`, `extra_free`, `tess_brand`, `tess_delivery_time`) must be present, otherwise the item fails with "No fields to update".
+- `price` is **optional**. At least one updatable field (`price`, `special_price`, `special_from_date`, `special_to_date`, `extra_free`, `tess_brand`, `tess_delivery_time`, `bol_price`) must be present, otherwise the item fails with "No fields to update".
 - Setting `price` flags the product with `has_tess_price = true`. When `price` is omitted, `has_tess_price` is left untouched and only the other provided fields are updated.
 - `special_price` is only changed when provided; omit it to leave it untouched.
 - `special_from_date` / `special_to_date`: **omit** (or send `null`) to leave the current date untouched, send `""` to **clear** the date, or send a valid `Y-m-d` / `Y-m-d H:i:s` value to set it. Invalid date format → that item fails with a message. A `special_price` with no dates applies immediately and never expires (standard Magento behaviour).
 - `extra_free` is only changed when provided (a non-negative number, `0` allowed); omit it to leave it untouched.
 - `tess_delivery_time`: omit (or `null`) to leave unchanged, send `""` to clear, or send a string to set it (trimmed).
 - `tess_brand`: omit (or `null`) to leave unchanged, send `""` to clear the `tess_brand` text (the assigned brand is kept), or send a string to set it. **When `Amasty_ShopbyBrand` is installed**, the brand text is also matched against the configured brand attribute (`amshopby_brand/general/attribute_code`, e.g. `manufacture_brand`) — the option is found case-insensitively (trimmed) or **created if missing**, then assigned to the product. When the module is not installed, only the `tess_brand` text is stored.
+- `bol_price`: omit (or `null`) to leave unchanged, send `""` to **clear** the override, or send a non-negative number to set it. The value is stored **excluding VAT**, the same basis as `price`. When set (and `> 0`) it replaces the price Channable exports on **every** channel — both the pull feed and the incremental item-update webhook — and suppresses the discount fields (`sale_price`, `sale_price_effective_date`, discount percentage), since a bol price is treated as final. A `0` or negative stored value is ignored and the catalog price is exported. **Requires `Magmodules_Channable`.**
+- **Configurable products and `bol_price`:** Channable exports configurables through their child variants (`magmodules_channable/types/configurable = simple`), so the override must be set on the **child SKU**. Setting it on the parent has no effect on what is pushed.
 - For configurable parents, `price` has no catalog effect (price comes from children) but the flag is still set — send child SKUs to change actual prices.
 
 ### Response
@@ -500,6 +517,9 @@ curl -H "Authorization: Bearer $TOKEN" "$BASE/rest/en_us/V1/tessAi/products"
 
 ## 10. Notes for integrators
 
+- **Null fields are omitted, not sent as `null`.** Magento builds the response from the service contract: a getter documented as `@return X|null` is dropped from the JSON when the value is null, while a getter documented as non-nullable is emitted as `null`. That is why a product with no cost shows `"purchase_price": null` but has no `purchase_price_excl_vat` / `purchase_price_incl_vat` key at all. **Always use optional access** — never assume a key exists.
+- **Fields that are absent on a stock install:** `delivery_time` (needs `Delivery Message Template` configured), `tess_brand` / `tess_delivery_time` / `extra_free` / `special_price` (only present once written), and `additional_attributes` returns `[]` until attributes are configured in Admin.
+- **Channable:** `channable_status` on the product endpoints and `bol_price` on `POST /prices` require `Magmodules_Channable`. Without it, `channable_status` is omitted and `bol_price` is still stored but never read.
 - **Currency:** all monetary fields (`value`, `*_excl_vat`, `*_incl_vat`, `shipping_cost`) are in `sale_units[].currency`.
 - **Tax:** `*_incl_vat` follows the product's tax class plus the store's tax rule. Values may differ per store.
 - **Caching:** `/categories` and `/filters` change rarely — cache 10–30 minutes on the client.
