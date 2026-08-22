@@ -13,11 +13,13 @@ class PriceUpdateManagement implements PriceUpdateManagementInterface
 {
     private const HAS_TESS_PRICE_ATTRIBUTE_CODE = 'has_tess_price';
 
-    private const EXTRA_FREE_ATTRIBUTE_CODE = 'extra_free';
+    private const EXTRA_FEE_ATTRIBUTE_CODE = 'extra_fee';
 
     private const TESS_BRAND_ATTRIBUTE_CODE = 'tess_brand';
 
     private const BOL_PRICE_ATTRIBUTE_CODE = 'bol_price';
+
+    private const BOL_EXTRA_FEE_ATTRIBUTE_CODE = 'bol_extra_fee';
 
     /**
      * @var ProductRepositoryInterface
@@ -83,10 +85,10 @@ class PriceUpdateManagement implements PriceUpdateManagementInterface
 
     /**
      * Load the product in default scope, apply whichever fields were provided
-     * (price, special price, validity dates, extra_free, bol_price, tess
-     * brand/delivery) and persist. `price` is optional; when present the product
-     * is flagged as TESS-priced (`has_tess_price = 1`). At least one field must
-     * be provided.
+     * (price, special price, validity dates, extra_fee, bol_price,
+     * bol_extra_fee, tess brand/delivery) and persist. `price` is optional;
+     * when present the product is flagged as TESS-priced
+     * (`has_tess_price = 1`). At least one field must be provided.
      *
      * @param string $sku
      * @param \Combipower\TessAI\Api\Data\PriceUpdateInterface $item
@@ -140,18 +142,19 @@ class PriceUpdateManagement implements PriceUpdateManagementInterface
         $this->applyDate($product, 'special_from_date', $item->getSpecialFromDate(), $sku);
         $this->applyDate($product, 'special_to_date', $item->getSpecialToDate(), $sku);
 
-        $extraFree = $item->getExtraFree();
-        if ($extraFree !== null && $extraFree !== '') {
-            $normalizedExtraFree = $this->normalizePrice($extraFree);
-            if ($normalizedExtraFree === null) {
+        $extraFee = $item->getExtraFee();
+        if ($extraFee !== null && $extraFee !== '') {
+            $normalizedExtraFee = $this->normalizePrice($extraFee);
+            if ($normalizedExtraFee === null) {
                 throw new LocalizedException(
-                    __('Invalid extra_free for SKU "%1". Must be a non-negative number.', $sku)
+                    __('Invalid extra_fee for SKU "%1". Must be a non-negative number.', $sku)
                 );
             }
-            $product->setData(self::EXTRA_FREE_ATTRIBUTE_CODE, $normalizedExtraFree);
+            $product->setData(self::EXTRA_FEE_ATTRIBUTE_CODE, $normalizedExtraFee);
         }
 
         $this->applyPrice($product, self::BOL_PRICE_ATTRIBUTE_CODE, $item->getBolPrice(), $sku);
+        $this->applyPrice($product, self::BOL_EXTRA_FEE_ATTRIBUTE_CODE, $item->getBolExtraFee(), $sku);
         $this->applyBrand($product, $item->getTessBrand());
         $this->applyText($product, 'tess_delivery_time', $item->getTessDeliveryTime());
 
@@ -172,10 +175,11 @@ class PriceUpdateManagement implements PriceUpdateManagementInterface
             || $item->getSpecialPrice() !== null
             || $item->getSpecialFromDate() !== null
             || $item->getSpecialToDate() !== null
-            || $item->getExtraFree() !== null
+            || $item->getExtraFee() !== null
             || $item->getTessBrand() !== null
             || $item->getTessDeliveryTime() !== null
-            || $item->getBolPrice() !== null;
+            || $item->getBolPrice() !== null
+            || $item->getBolExtraFee() !== null;
     }
 
     /**

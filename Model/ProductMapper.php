@@ -14,7 +14,9 @@ class ProductMapper
 {
     private const CONFIGURABLE_PRODUCT_TYPE = 'configurable';
 
-    private const EXTRA_FREE_ATTRIBUTE_CODE = 'extra_free';
+    private const EXTRA_FEE_ATTRIBUTE_CODE = 'extra_fee';
+
+    private const BOL_EXTRA_FEE_ATTRIBUTE_CODE = 'bol_extra_fee';
 
     private const HAS_TESS_PRICE_ATTRIBUTE_CODE = 'has_tess_price';
 
@@ -174,7 +176,8 @@ class ProductMapper
             : [];
 
         if (empty($saleUnits)) {
-            $extraFree = $this->resolveExtraFree($catalogProduct);
+            $extraFee = $this->resolveExtraFee($catalogProduct);
+            $bolExtraFee = $this->resolveBolExtraFee($catalogProduct);
             $hasTessPrice = $this->resolveHasTessPrice($catalogProduct);
             foreach ($tierPriceRows as $tierPriceRow) {
                 $unitAmount = $tierPriceRow['qty'];
@@ -201,7 +204,8 @@ class ProductMapper
                     ->setShippingCostExclVat($shipping['excl_vat'])
                     ->setShippingCostInclVat($shipping['incl_vat'])
                     ->setAvailableStock($stockQty)
-                    ->setExtraFree($extraFree)
+                    ->setExtraFee($extraFee)
+                    ->setBolExtraFee($bolExtraFee)
                     ->setHasTessPrice($hasTessPrice);
             }
         }
@@ -591,7 +595,8 @@ class ProductMapper
                 ->setShippingCostExclVat($shipping['excl_vat'])
                 ->setShippingCostInclVat($shipping['incl_vat'])
                 ->setAvailableStock($this->resolveStockQty($childProduct))
-                ->setExtraFree($this->resolveExtraFree($childProduct))
+                ->setExtraFee($this->resolveExtraFee($childProduct))
+                ->setBolExtraFee($this->resolveBolExtraFee($childProduct))
                 ->setHasTessPrice($this->resolveHasTessPrice($childProduct));
         }
 
@@ -599,16 +604,28 @@ class ProductMapper
     }
 
     /**
-     * Resolve the raw `extra_free` decimal attribute for a product. Returns null
+     * Resolve the raw `extra_fee` decimal attribute for a product. Returns null
      * when the attribute is unset or empty so it marshals to JSON `null` instead
      * of `0`.
      *
      * @param Product $product
      * @return float|null
      */
-    private function resolveExtraFree(Product $product)
+    private function resolveExtraFee(Product $product)
     {
-        return $this->normalizeDecimal($product->getData(self::EXTRA_FREE_ATTRIBUTE_CODE));
+        return $this->normalizeDecimal($product->getData(self::EXTRA_FEE_ATTRIBUTE_CODE));
+    }
+
+    /**
+     * Resolve the raw `bol_extra_fee` decimal attribute for a product. Same
+     * null-vs-zero contract as resolveExtraFee().
+     *
+     * @param Product $product
+     * @return float|null
+     */
+    private function resolveBolExtraFee(Product $product)
+    {
+        return $this->normalizeDecimal($product->getData(self::BOL_EXTRA_FEE_ATTRIBUTE_CODE));
     }
 
     /**
@@ -755,7 +772,8 @@ class ProductMapper
                     'special_price',
                     'tax_class_id',
                     'type_id',
-                    self::EXTRA_FREE_ATTRIBUTE_CODE,
+                    self::EXTRA_FEE_ATTRIBUTE_CODE,
+                    self::BOL_EXTRA_FEE_ATTRIBUTE_CODE,
                     self::HAS_TESS_PRICE_ATTRIBUTE_CODE,
                     $this->attributeProvider->getUnitAttributeCode(),
                 ],

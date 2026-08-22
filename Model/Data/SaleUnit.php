@@ -76,9 +76,14 @@ class SaleUnit extends AbstractSimpleObject implements SaleUnitInterface
         return $this->_get(self::AVAILABLE_STOCK);
     }
 
-    public function getExtraFree()
+    public function getExtraFee()
     {
-        return $this->_get(self::EXTRA_FREE);
+        return $this->_get(self::EXTRA_FEE);
+    }
+
+    public function getBolExtraFee()
+    {
+        return $this->_get(self::BOL_EXTRA_FEE);
     }
 
     public function getHasTessPrice()
@@ -156,9 +161,14 @@ class SaleUnit extends AbstractSimpleObject implements SaleUnitInterface
         return $this->setData(self::AVAILABLE_STOCK, $stock);
     }
 
-    public function setExtraFree($extraFree)
+    public function setExtraFee($extraFee)
     {
-        return $this->setData(self::EXTRA_FREE, $extraFree);
+        return $this->setData(self::EXTRA_FEE, $extraFee);
+    }
+
+    public function setBolExtraFee($bolExtraFee)
+    {
+        return $this->setData(self::BOL_EXTRA_FEE, $bolExtraFee);
     }
 
     public function setHasTessPrice($hasTessPrice)

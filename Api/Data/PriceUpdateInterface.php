@@ -8,10 +8,11 @@ interface PriceUpdateInterface
     public const SPECIAL_PRICE = 'special_price';
     public const SPECIAL_FROM_DATE = 'special_from_date';
     public const SPECIAL_TO_DATE = 'special_to_date';
-    public const EXTRA_FREE = 'extra_free';
+    public const EXTRA_FEE = 'extra_fee';
     public const TESS_BRAND = 'tess_brand';
     public const TESS_DELIVERY_TIME = 'tess_delivery_time';
     public const BOL_PRICE = 'bol_price';
+    public const BOL_EXTRA_FEE = 'bol_extra_fee';
 
     /**
      * @return string
@@ -41,7 +42,7 @@ interface PriceUpdateInterface
     /**
      * @return float|null
      */
-    public function getExtraFree();
+    public function getExtraFee();
 
     /**
      * @return string|null
@@ -57,6 +58,11 @@ interface PriceUpdateInterface
      * @return float|null
      */
     public function getBolPrice();
+
+    /**
+     * @return float|null
+     */
+    public function getBolExtraFee();
 
     /**
      * @param string $sku
@@ -89,10 +95,10 @@ interface PriceUpdateInterface
     public function setSpecialToDate($specialToDate);
 
     /**
-     * @param float|null $extraFree
+     * @param float|null $extraFee
      * @return \Combipower\TessAI\Api\Data\PriceUpdateInterface
      */
-    public function setExtraFree($extraFree);
+    public function setExtraFee($extraFee);
 
     /**
      * @param string|null $tessBrand
@@ -111,4 +117,10 @@ interface PriceUpdateInterface
      * @return \Combipower\TessAI\Api\Data\PriceUpdateInterface
      */
     public function setBolPrice($bolPrice);
+
+    /**
+     * @param float|null $bolExtraFee
+     * @return \Combipower\TessAI\Api\Data\PriceUpdateInterface
+     */
+    public function setBolExtraFee($bolExtraFee);
 }

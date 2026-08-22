@@ -243,7 +243,8 @@ The following filters are applied implicitly — disabled / hidden / unsupported
           "shipping_cost_excl_vat": 4.95,
           "shipping_cost_incl_vat": 5.99,
           "available_stock": 1,
-          "extra_free": 2.0,
+          "extra_fee": 2.0,
+          "bol_extra_fee": 3.5,
           "has_tess_price": true
         }
       ],
@@ -301,7 +302,8 @@ The following filters are applied implicitly — disabled / hidden / unsupported
 | `shipping_cost_excl_vat` | float \| null | Estimated shipping for the configured destination, **excluding** VAT. Computed via `TaxHelper::getShippingPrice` against the configured shipping tax class. |
 | `shipping_cost_incl_vat` | float \| null | Estimated shipping for the configured destination, **including** VAT. |
 | `available_stock` | float \| null | Raw physical stock qty (**not** salable qty). When `Magento_InventoryApi` is enabled, this is `SUM(inventory_source_item.quantity)` across all sources where `status=1`; a SKU with no MSI rows returns `null` unless *MSI Legacy Fallback* (Admin → Combipower → TESS AI → Stock) is enabled, which falls back to `cataloginventory_stock_item.qty` (stock_id=1). When MSI is disabled the legacy qty is always used. Reservations are NOT subtracted. |
-| `extra_free` | float \| null | Raw value of the `extra_free` decimal product attribute. Simple/virtual: taken from the product itself (same value on every sale unit). Configurable: taken from each child variant. `null` when unset/empty. |
+| `extra_fee` | float \| null | Raw value of the `extra_fee` decimal product attribute (**renamed from `extra_free`** — update any client still sending/reading the old name). Simple/virtual: taken from the product itself (same value on every sale unit). Configurable: taken from each child variant. `null` when unset/empty. |
+| `bol_extra_fee` | float \| null | Bol counterpart of `extra_fee`, stored separately so the marketplace fee can differ from the Magento one. Same resolution rules and `null` semantics. |
 | `has_tess_price` | bool | Value of the `has_tess_price` Yes/No product attribute. Simple/virtual: taken from the product itself. Configurable: taken from each child variant. Defaults to `false` when unset. |
 
 ### `channable_status`
@@ -428,10 +430,11 @@ Prices are written in the **default (admin) scope** (store 0). On a global price
       "special_price": 19.99,
       "special_from_date": "2026-06-10",
       "special_to_date": "2026-06-20",
-      "extra_free": 2,
+      "extra_fee": 2,
       "tess_brand": "D4E Premium",
       "tess_delivery_time": "1-3 werkdagen",
-      "bol_price": 21.5
+      "bol_price": 21.5,
+      "bol_extra_fee": 3.5
     }
   ]
 }
@@ -444,22 +447,24 @@ Prices are written in the **default (admin) scope** (store 0). On a global price
 | `items[].special_price` | float | no | New special price (excl. VAT), must be ≥ 0 when present |
 | `items[].special_from_date` | string | no | Special-price start date. `Y-m-d` or `Y-m-d H:i:s`. Send `""` to clear; omit to leave unchanged |
 | `items[].special_to_date` | string | no | Special-price end date. Same format/semantics as `special_from_date` |
-| `items[].extra_free` | float | no | New `extra_free` value (≥ 0, `0` allowed). Omit to leave unchanged |
+| `items[].extra_fee` | float | no | New `extra_fee` value (≥ 0, `0` allowed). Omit to leave unchanged |
 | `items[].tess_brand` | string | no | New `tess_brand` value. Send `""` to clear; omit to leave unchanged |
 | `items[].tess_delivery_time` | string | no | New `tess_delivery_time` value. Send `""` to clear; omit to leave unchanged |
 | `items[].bol_price` | float | no | Price pushed to Channable instead of the catalog price (excl. VAT, must be ≥ 0). Send `""` to clear the override; omit to leave unchanged |
+| `items[].bol_extra_fee` | float | no | Bol counterpart of `extra_fee` (≥ 0, `0` allowed). Send `""` to clear; omit to leave unchanged |
 
 ### Behaviour
 
 - **Per-item processing:** a failing SKU does not abort the batch — its result row carries `success: false` and a `message`.
-- `price` is **optional**. At least one updatable field (`price`, `special_price`, `special_from_date`, `special_to_date`, `extra_free`, `tess_brand`, `tess_delivery_time`, `bol_price`) must be present, otherwise the item fails with "No fields to update".
+- `price` is **optional**. At least one updatable field (`price`, `special_price`, `special_from_date`, `special_to_date`, `extra_fee`, `tess_brand`, `tess_delivery_time`, `bol_price`, `bol_extra_fee`) must be present, otherwise the item fails with "No fields to update".
 - Setting `price` flags the product with `has_tess_price = true`. When `price` is omitted, `has_tess_price` is left untouched and only the other provided fields are updated.
 - `special_price` is only changed when provided; omit it to leave it untouched.
 - `special_from_date` / `special_to_date`: **omit** (or send `null`) to leave the current date untouched, send `""` to **clear** the date, or send a valid `Y-m-d` / `Y-m-d H:i:s` value to set it. Invalid date format → that item fails with a message. A `special_price` with no dates applies immediately and never expires (standard Magento behaviour).
-- `extra_free` is only changed when provided (a non-negative number, `0` allowed); omit it to leave it untouched.
+- `extra_fee` is only changed when provided (a non-negative number, `0` allowed); omit it to leave it untouched.
 - `tess_delivery_time`: omit (or `null`) to leave unchanged, send `""` to clear, or send a string to set it (trimmed).
 - `tess_brand`: omit (or `null`) to leave unchanged, send `""` to clear the `tess_brand` text (the assigned brand is kept), or send a string to set it. **When `Amasty_ShopbyBrand` is installed**, the brand text is also matched against the configured brand attribute (`amshopby_brand/general/attribute_code`, e.g. `manufacture_brand`) — the option is found case-insensitively (trimmed) or **created if missing**, then assigned to the product. When the module is not installed, only the `tess_brand` text is stored.
 - `bol_price`: omit (or `null`) to leave unchanged, send `""` to **clear** the override, or send a non-negative number to set it. The value is stored **excluding VAT**, the same basis as `price`. When set (and `> 0`) it replaces the price Channable exports on **every** channel — both the pull feed and the incremental item-update webhook — and suppresses the discount fields (`sale_price`, `sale_price_effective_date`, discount percentage), since a bol price is treated as final. A `0` or negative stored value is ignored and the catalog price is exported. **Requires `Magmodules_Channable`.**
+- `bol_extra_fee`: omit (or `null`) to leave unchanged, send `""` to **clear**, or send a non-negative number to set it. Stored and echoed back only — unlike `bol_price` it is **not** part of the Channable export, because the item-update webhook payload has no field for a fee.
 - **Configurable products and `bol_price`:** Channable exports configurables through their child variants (`magmodules_channable/types/configurable = simple`), so the override must be set on the **child SKU**. Setting it on the parent has no effect on what is pushed.
 - For configurable parents, `price` has no catalog effect (price comes from children) but the flag is still set — send child SKUs to change actual prices.
 
@@ -518,7 +523,7 @@ curl -H "Authorization: Bearer $TOKEN" "$BASE/rest/en_us/V1/tessAi/products"
 ## 10. Notes for integrators
 
 - **Null fields are omitted, not sent as `null`.** Magento builds the response from the service contract: a getter documented as `@return X|null` is dropped from the JSON when the value is null, while a getter documented as non-nullable is emitted as `null`. That is why a product with no cost shows `"purchase_price": null` but has no `purchase_price_excl_vat` / `purchase_price_incl_vat` key at all. **Always use optional access** — never assume a key exists.
-- **Fields that are absent on a stock install:** `delivery_time` (needs `Delivery Message Template` configured), `tess_brand` / `tess_delivery_time` / `extra_free` / `special_price` (only present once written), and `additional_attributes` returns `[]` until attributes are configured in Admin.
+- **Fields that are absent on a stock install:** `delivery_time` (needs `Delivery Message Template` configured), `tess_brand` / `tess_delivery_time` / `extra_fee` / `bol_extra_fee` / `special_price` (only present once written), and `additional_attributes` returns `[]` until attributes are configured in Admin.
 - **Channable:** `channable_status` on the product endpoints and `bol_price` on `POST /prices` require `Magmodules_Channable`. Without it, `channable_status` is omitted and `bol_price` is still stored but never read.
 - **Currency:** all monetary fields (`value`, `*_excl_vat`, `*_incl_vat`, `shipping_cost`) are in `sale_units[].currency`.
 - **Tax:** `*_incl_vat` follows the product's tax class plus the store's tax rule. Values may differ per store.

@@ -36,10 +36,11 @@ Created by data patches under `Setup/Patch/Data`, all global scope and grouped u
 | Attribute | Type | Purpose |
 |---|---|---|
 | `has_tess_price` | boolean | Set to `1` whenever `POST /prices` writes a `price` |
-| `extra_free` | decimal | Free-quantity value exposed per sale unit |
+| `extra_fee` | decimal | Extra fee / surcharge exposed per sale unit. Renamed from the misspelled `extra_free`; the data patch renames the attribute in place on shops that already have it |
 | `tess_brand` | varchar | Brand text from TESS; also resolves/creates the Amasty Shop by Brand option when that module is installed |
 | `tess_delivery_time` | varchar | Delivery time text from TESS |
 | `bol_price` | decimal | Overrides the price exported to Channable — see below |
+| `bol_extra_fee` | decimal | Bol counterpart of `extra_fee`, stored separately. Exposed per sale unit; not part of the Channable export |
 
 All five are writable through `POST /V1/tessAi/prices` and readable through the product endpoints.
 

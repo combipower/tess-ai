@@ -8,9 +8,14 @@ use Magento\Eav\Setup\EavSetupFactory;
 use Magento\Framework\Setup\ModuleDataSetupInterface;
 use Magento\Framework\Setup\Patch\DataPatchInterface;
 
-class AddExtraFreeAttribute implements DataPatchInterface
+class AddExtraFeeAttribute implements DataPatchInterface
 {
-    public const ATTRIBUTE_CODE = 'extra_free';
+    public const ATTRIBUTE_CODE = 'extra_fee';
+
+    /**
+     * Code this attribute shipped under before the typo was corrected.
+     */
+    private const LEGACY_ATTRIBUTE_CODE = 'extra_free';
 
     /**
      * @var ModuleDataSetupInterface
@@ -31,22 +36,43 @@ class AddExtraFreeAttribute implements DataPatchInterface
     }
 
     /**
+     * Add the `extra_fee` product attribute.
+     *
+     * Shops that already ran the earlier `AddExtraFreeAttribute` patch carry the
+     * misspelled `extra_free` code. Those are renamed in place rather than
+     * dropped and recreated, so the attribute id and any stored values survive.
+     *
      * @return $this
      */
     public function apply()
     {
         /** @var EavSetup $eavSetup */
         $eavSetup = $this->eavSetupFactory->create(['setup' => $this->moduleDataSetup]);
+
         if ($eavSetup->getAttributeId(Product::ENTITY, self::ATTRIBUTE_CODE)) {
-            return $eavSetup->removeAttribute(Product::ENTITY, self::ATTRIBUTE_CODE);
+            return $this;
         }
-        
+
+        $legacyAttributeId = $eavSetup->getAttributeId(Product::ENTITY, self::LEGACY_ATTRIBUTE_CODE);
+        if ($legacyAttributeId) {
+            $eavSetup->updateAttribute(
+                Product::ENTITY,
+                $legacyAttributeId,
+                [
+                    'attribute_code' => self::ATTRIBUTE_CODE,
+                    'frontend_label' => 'Extra Fee',
+                ]
+            );
+
+            return $this;
+        }
+
         $eavSetup->addAttribute(
             Product::ENTITY,
             self::ATTRIBUTE_CODE,
             [
                 'type' => 'decimal',
-                'label' => 'Extra Free',
+                'label' => 'Extra Fee',
                 'input' => 'text',
                 'frontend_class' => 'validate-number',
                 'required' => false,

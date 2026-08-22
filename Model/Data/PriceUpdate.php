@@ -31,9 +31,9 @@ class PriceUpdate extends AbstractSimpleObject implements PriceUpdateInterface
         return $this->_get(self::SPECIAL_TO_DATE);
     }
 
-    public function getExtraFree()
+    public function getExtraFee()
     {
-        return $this->_get(self::EXTRA_FREE);
+        return $this->_get(self::EXTRA_FEE);
     }
 
     public function getTessBrand()
@@ -49,6 +49,11 @@ class PriceUpdate extends AbstractSimpleObject implements PriceUpdateInterface
     public function getBolPrice()
     {
         return $this->_get(self::BOL_PRICE);
+    }
+
+    public function getBolExtraFee()
+    {
+        return $this->_get(self::BOL_EXTRA_FEE);
     }
 
     public function setSku($sku)
@@ -76,9 +81,9 @@ class PriceUpdate extends AbstractSimpleObject implements PriceUpdateInterface
         return $this->setData(self::SPECIAL_TO_DATE, $specialToDate);
     }
 
-    public function setExtraFree($extraFree)
+    public function setExtraFee($extraFee)
     {
-        return $this->setData(self::EXTRA_FREE, $extraFree);
+        return $this->setData(self::EXTRA_FEE, $extraFee);
     }
 
     public function setTessBrand($tessBrand)
@@ -94,5 +99,10 @@ class PriceUpdate extends AbstractSimpleObject implements PriceUpdateInterface
     public function setBolPrice($bolPrice)
     {
         return $this->setData(self::BOL_PRICE, $bolPrice);
+    }
+
+    public function setBolExtraFee($bolExtraFee)
+    {
+        return $this->setData(self::BOL_EXTRA_FEE, $bolExtraFee);
     }
 }
