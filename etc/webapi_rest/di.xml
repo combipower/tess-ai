@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <!-- /rest/<store>/schema returned HTTP 500 for tokens with access to /V1/tessAi/products ("mixed" filters) -->
+    <type name="Magento\Framework\Reflection\TypeProcessor">
+        <plugin name="combipower_tessai_any_type_schema" type="Combipower\TessAI\Plugin\Webapi\AnyTypeSchemaPlugin"/>
+    </type>
+</config>
